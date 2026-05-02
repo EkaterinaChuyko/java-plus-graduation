@@ -1,0 +1,25 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:6542/stats
+    username: user
+    password: pass
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+  sql:
+    init:
+      mode: always
+      platform: postgresql
+      schema-locations: classpath:schema.sql
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
