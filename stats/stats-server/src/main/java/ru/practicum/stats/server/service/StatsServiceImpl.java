@@ -31,14 +31,15 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+    public List<ViewStatsDto> getStats(LocalDateTime start,
+                                       LocalDateTime end,
+                                       List<String> uris,
+                                       boolean unique) {
 
-        if (uris != null && uris.isEmpty()) {
-            uris = null;
-        }
+        boolean useUris = uris != null && !uris.isEmpty();
 
         return unique
-                ? repository.getStatsUnique(start, end)
-                : repository.getStatsTotal(start, end);
+                ? repository.getStatsUnique(start, end, uris, useUris)
+                : repository.getStatsTotal(start, end, uris, useUris);
     }
 }

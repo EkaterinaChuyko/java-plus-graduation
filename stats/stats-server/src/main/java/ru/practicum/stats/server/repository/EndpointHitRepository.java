@@ -19,12 +19,15 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
+        AND (:useUris = false OR e.uri IN :uris)
         GROUP BY e.app, e.uri
         ORDER BY COUNT(e.id) DESC
         """)
     List<ViewStatsDto> getStatsTotal(
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("uris") List<String> uris,
+            @Param("useUris") boolean useUris
     );
 
     @Query("""
@@ -35,11 +38,14 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
+        AND (:useUris = false OR e.uri IN :uris)
         GROUP BY e.app, e.uri
         ORDER BY COUNT(DISTINCT e.ip) DESC
         """)
     List<ViewStatsDto> getStatsUnique(
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("uris") List<String> uris,
+            @Param("useUris") boolean useUris
     );
 }
