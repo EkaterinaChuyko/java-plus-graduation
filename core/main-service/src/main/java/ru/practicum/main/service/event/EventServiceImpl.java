@@ -127,20 +127,16 @@ public class EventServiceImpl implements EventService {
         List<ParticipationRequestDto> rejected = new ArrayList<>();
         for (ParticipationRequest req : requests) {
             if (req.getStatus() != RequestStatus.PENDING) {
-                rejected.add(RequestMapper.toDto(req));
-                continue;
+                throw new ConflictException("Request is not in PENDING state");
             }
             if (dto.getStatus() == EventRequestStatusUpdateRequest.Status.CONFIRMED) {
                 if (event.getParticipantLimit() > 0
                     && confirmedCount >= event.getParticipantLimit()) {
-
-                    req.setStatus(RequestStatus.REJECTED);
-                    rejected.add(RequestMapper.toDto(requestRepository.save(req)));
-                } else {
-                    req.setStatus(RequestStatus.CONFIRMED);
-                    confirmed.add(RequestMapper.toDto(requestRepository.save(req)));
-                    confirmedCount++;
+                    throw new ConflictException("Participant limit reached");
                 }
+                req.setStatus(RequestStatus.CONFIRMED);
+                confirmed.add(RequestMapper.toDto(requestRepository.save(req)));
+                confirmedCount++;
             } else {
                 req.setStatus(RequestStatus.REJECTED);
                 rejected.add(RequestMapper.toDto(requestRepository.save(req)));

@@ -77,11 +77,8 @@ public class RequestServiceImpl implements RequestService {
         if (!req.getRequester().getId().equals(userId)) {
             throw new NotFoundException("Request doesn't belong to user");
         }
-        if (req.getStatus() == RequestStatus.CANCELED) {
-            throw new ConflictException("Request already canceled");
-        }
-        if (req.getStatus() == RequestStatus.CONFIRMED) {
-            throw new ConflictException("Cannot cancel confirmed request");
+        if (req.getStatus() != RequestStatus.PENDING) {
+            throw new ConflictException("Only pending requests can be canceled");
         }
         req.setStatus(RequestStatus.CANCELED);
         return RequestMapper.toDto(requestRepository.save(req));
