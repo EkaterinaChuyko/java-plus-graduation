@@ -19,29 +19,39 @@ spring:
 
       routes:
         - id: admin
-          uri: lb://main-service
+          uri: lb://MAIN-SERVICE
           predicates:
             - Path=/admin/**
 
         - id: users
-          uri: lb://main-service
+          uri: lb://MAIN-SERVICE
           predicates:
             - Path=/users/**
 
         - id: events
-          uri: lb://main-service
+          uri: lb://MAIN-SERVICE
           predicates:
             - Path=/events/**
 
         - id: compilations
-          uri: lb://main-service
+          uri: lb://MAIN-SERVICE
           predicates:
             - Path=/compilations/**
 
-        - id: categories
-          uri: lb://main-service
+        - id: categories-public
+          uri: lb://MAIN-SERVICE
           predicates:
             - Path=/categories/**
+
+        - id: stats-hit
+          uri: lb://STATS-SERVER
+          predicates:
+            - Path=/hit
+
+        - id: stats
+          uri: lb://STATS-SERVER
+          predicates:
+            - Path=/stats
 
 eureka:
   client:
