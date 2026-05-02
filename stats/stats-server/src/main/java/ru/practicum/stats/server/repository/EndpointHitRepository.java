@@ -12,28 +12,38 @@ import java.util.List;
 public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long> {
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(e.id))
+        SELECT new ru.practicum.stats.dto.ViewStatsDto(
+            e.app,
+            e.uri,
+            COUNT(e.ip)
+        )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
-          AND (:urisNull = true OR e.uri IN :uris)
+          AND (:uris IS NULL OR e.uri IN :uris)
         GROUP BY e.app, e.uri
-        ORDER BY COUNT(e.id) DESC
+        ORDER BY COUNT(e.ip) DESC
         """)
-    List<ViewStatsDto> getStatsTotal(@Param("start") LocalDateTime start,
-                                     @Param("end") LocalDateTime end,
-                                     @Param("uris") List<String> uris,
-                                     @Param("urisNull") boolean urisNull);
+    List<ViewStatsDto> getStatsTotal(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("uris") List<String> uris
+    );
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(DISTINCT e.ip))
+        SELECT new ru.practicum.stats.dto.ViewStatsDto(
+            e.app,
+            e.uri,
+            COUNT(DISTINCT e.ip)
+        )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
-          AND (:urisNull = true OR e.uri IN :uris)
+          AND (:uris IS NULL OR e.uri IN :uris)
         GROUP BY e.app, e.uri
         ORDER BY COUNT(DISTINCT e.ip) DESC
         """)
-    List<ViewStatsDto> getStatsUnique(@Param("start") LocalDateTime start,
-                                      @Param("end") LocalDateTime end,
-                                      @Param("uris") List<String> uris,
-                                      @Param("urisNull") boolean urisNull);
+    List<ViewStatsDto> getStatsUnique(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("uris") List<String> uris
+    );
 }
