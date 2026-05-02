@@ -12,7 +12,11 @@ import java.util.List;
 public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long> {
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(e.id))
+        SELECT new ru.practicum.stats.dto.ViewStatsDto(
+            e.app,
+            e.uri,
+            COUNT(e.id)
+        )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
         GROUP BY e.app, e.uri
@@ -22,7 +26,11 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
                                         @Param("end") LocalDateTime end);
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(e.id))
+        SELECT new ru.practicum.stats.dto.ViewStatsDto(
+            e.app,
+            e.uri,
+            COUNT(e.id)
+        )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
           AND e.uri IN :uris
@@ -34,7 +42,11 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
                                      @Param("uris") List<String> uris);
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(DISTINCT e.ip))
+        SELECT new ru.practicum.stats.dto.ViewStatsDto(
+            e.app,
+            e.uri,
+            COUNT(DISTINCT e.ip)
+        )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
         GROUP BY e.app, e.uri
@@ -44,7 +56,11 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
                                          @Param("end") LocalDateTime end);
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(DISTINCT e.ip))
+        SELECT new ru.practicum.stats.dto.ViewStatsDto(
+            e.app,
+            e.uri,
+            COUNT(DISTINCT e.ip)
+        )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
           AND e.uri IN :uris

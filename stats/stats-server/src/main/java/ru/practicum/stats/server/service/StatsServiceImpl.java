@@ -36,7 +36,8 @@ public class StatsServiceImpl implements StatsService {
                                        List<String> uris,
                                        boolean unique) {
 
-        boolean empty = (uris == null || uris.isEmpty());
+        List<String> safeUris = (uris == null || uris.isEmpty()) ? null : uris;
+        boolean empty = safeUris == null;
 
         if (empty) {
             return unique
@@ -45,7 +46,7 @@ public class StatsServiceImpl implements StatsService {
         }
 
         return unique
-                ? repository.getStatsUnique(start, end, uris)
-                : repository.getStatsTotal(start, end, uris);
+                ? repository.getStatsUnique(start, end, safeUris)
+                : repository.getStatsTotal(start, end, safeUris);
     }
 }
