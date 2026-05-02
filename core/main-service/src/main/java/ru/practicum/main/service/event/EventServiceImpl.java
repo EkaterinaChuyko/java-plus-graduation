@@ -113,27 +113,27 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventRequestStatusUpdateResult changeRequestStatus(Long userId, Long eventId, EventRequestStatusUpdateRequest dto) {
-        Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
+    public EventRequestStatusUpdateResult changeRequestStatus(Long userId, Long eventId,
+                                                              EventRequestStatusUpdateRequest dto) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found"));
         if (!event.getInitiatorId().equals(userId)) {
             throw new ConflictException("User is not initiator");
         }
-
         long confirmedCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-        if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-            throw new ConflictException("The participant limit has been reached");
-        }
-
-        List<ParticipationRequest> requests = requestRepository.findAllByEventIdAndIdIn(eventId, dto.getRequestIds());
+        List<ParticipationRequest> requests =
+                requestRepository.findAllByEventIdAndIdIn(eventId, dto.getRequestIds());
         List<ParticipationRequestDto> confirmed = new ArrayList<>();
         List<ParticipationRequestDto> rejected = new ArrayList<>();
-
         for (ParticipationRequest req : requests) {
             if (req.getStatus() != RequestStatus.PENDING) {
-                throw new ConflictException("Request must be PENDING");
+                rejected.add(RequestMapper.toDto(req));
+                continue;
             }
             if (dto.getStatus() == EventRequestStatusUpdateRequest.Status.CONFIRMED) {
-                if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
+                if (event.getParticipantLimit() > 0
+                    && confirmedCount >= event.getParticipantLimit()) {
+
                     req.setStatus(RequestStatus.REJECTED);
                     rejected.add(RequestMapper.toDto(requestRepository.save(req)));
                 } else {
