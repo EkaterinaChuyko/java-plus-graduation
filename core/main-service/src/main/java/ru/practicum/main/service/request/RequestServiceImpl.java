@@ -72,9 +72,16 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
-        ParticipationRequest req = requestRepository.findById(requestId).orElseThrow(() -> new NotFoundException("Request not found"));
+        ParticipationRequest req = requestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Request not found"));
         if (!req.getRequester().getId().equals(userId)) {
             throw new NotFoundException("Request doesn't belong to user");
+        }
+        if (req.getStatus() == RequestStatus.CANCELED) {
+            throw new ConflictException("Request already canceled");
+        }
+        if (req.getStatus() == RequestStatus.CONFIRMED) {
+            throw new ConflictException("Cannot cancel confirmed request");
         }
         req.setStatus(RequestStatus.CANCELED);
         return RequestMapper.toDto(requestRepository.save(req));
