@@ -18,7 +18,7 @@ spring:
           enabled: false
 
       routes:
-        - id: admin-users
+        - id: admin
           uri: lb://main-service
           predicates:
             - Path=/admin/**
@@ -37,6 +37,11 @@ spring:
           uri: lb://main-service
           predicates:
             - Path=/compilations/**
+
+        - id: categories
+          uri: lb://main-service
+          predicates:
+            - Path=/categories/**
 
 eureka:
   client:
