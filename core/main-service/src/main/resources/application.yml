@@ -6,20 +6,23 @@ spring:
     name: main-service
 
   config:
-    import: "optional:configserver:"
+    import: "optional:configserver:http://localhost:8888"
 
   datasource:
-    url: jdbc:postgresql://localhost:6543/ewm
+    url: jdbc:postgresql://ewm-db:5432/ewm
     username: user
     password: pass
-    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: none
+    show-sql: false
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}

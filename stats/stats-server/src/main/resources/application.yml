@@ -5,6 +5,9 @@ spring:
   application:
     name: stats-server
 
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
   datasource:
     url: jdbc:postgresql://localhost:6542/stats
     username: user
@@ -20,5 +23,7 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
-    register-with-eureka: true
-    fetch-registry: true
+
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}

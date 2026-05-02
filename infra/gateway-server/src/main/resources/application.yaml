@@ -8,57 +8,16 @@ spring:
   main:
     web-application-type: reactive
 
-  config:
-    import: optional:configserver:http://localhost:8888
-
   cloud:
     gateway:
       discovery:
         locator:
-          enabled: false
-
-      routes:
-        - id: admin
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/admin/**
-
-        - id: users
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/users/**
-
-        - id: events
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/events/**
-
-        - id: compilations
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/compilations/**
-
-        - id: categories-public
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/categories/**
-
-        - id: stats-hit
-          uri: lb://STATS-SERVER
-          predicates:
-            - Path=/hit
-
-        - id: stats
-          uri: lb://STATS-SERVER
-          predicates:
-            - Path=/stats
+          enabled: true
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
-    register-with-eureka: true
-    fetch-registry: true
 
   instance:
     prefer-ip-address: true
