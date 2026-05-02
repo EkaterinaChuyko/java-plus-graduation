@@ -16,15 +16,20 @@ spring:
           lower-case-service-id: true
 
       routes:
-        - id: user-service
-          uri: lb://USER-SERVICE
+        - id: main-service
+          uri: lb://MAIN-SERVICE
           predicates:
-            - Path=/admin/**
+            - Path=/admin/**,/users/**,/events/**,/compilations/**,/categories/**
 
-        - id: event-service
-          uri: lb://EVENT-SERVICE
+        - id: stats-hit
+          uri: lb://STATS-SERVER
           predicates:
-            - Path=/users/**/events/**
+            - Path=/hit/**
+
+        - id: stats
+          uri: lb://STATS-SERVER
+          predicates:
+            - Path=/stats/**
 
 eureka:
   client:
