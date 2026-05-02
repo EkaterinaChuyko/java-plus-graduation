@@ -11,6 +11,7 @@ import ru.practicum.stats.dto.ViewStatsDto;
 import ru.practicum.stats.server.service.StatsService;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -27,14 +28,30 @@ public class StatsController {
 
     @GetMapping("/stats")
     public List<ViewStatsDto> getStats(
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
-            @RequestParam(required = false) List<String> uris,
-            @RequestParam(defaultValue = "false") boolean unique
+            @RequestParam
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            LocalDateTime start,
+
+            @RequestParam
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            LocalDateTime end,
+
+            @RequestParam(required = false)
+            String uris,
+
+            @RequestParam(defaultValue = "false")
+            boolean unique
     ) {
+        if (start == null || end == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "start/end required");
+        }
+
         if (end.isBefore(start)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "end must be after start");
         }
-        return statsService.getStats(start, end, uris, unique);
+
+        List<String> uriList = uris != null ? Arrays.asList(uris.split(",")) : null;
+
+        return statsService.getStats(start, end, uriList, unique);
     }
 }
