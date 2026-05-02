@@ -26,23 +26,15 @@ public class StatsServiceImpl implements StatsService {
                 .ip(dto.getIp())
                 .timestamp(dto.getTimestamp())
                 .build();
-
         repository.save(hit);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ViewStatsDto> getStats(LocalDateTime start,
-                                       LocalDateTime end,
-                                       List<String> uris,
-                                       boolean unique) {
-
-        List<String> safeUris = (uris == null) ? List.of() : uris;
-
-        if (unique) {
-            return repository.getStatsUnique(start, end, safeUris, !safeUris.isEmpty());
-        } else {
-            return repository.getStatsTotal(start, end, safeUris, !safeUris.isEmpty());
-        }
+    public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+        boolean urisNull = (uris == null || uris.isEmpty());
+        return unique
+                ? repository.getStatsUnique(start, end, uris, urisNull)
+                : repository.getStatsTotal(start, end, uris, urisNull);
     }
 }

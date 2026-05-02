@@ -20,6 +20,6 @@ public class HitDto {
     private String ip;
 
     @NotNull(message = "Timestamp cannot be null")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
 }
