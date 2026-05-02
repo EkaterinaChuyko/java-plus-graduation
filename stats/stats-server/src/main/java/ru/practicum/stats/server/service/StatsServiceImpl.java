@@ -35,12 +35,17 @@ public class StatsServiceImpl implements StatsService {
                                        LocalDateTime end,
                                        List<String> uris,
                                        boolean unique) {
-        boolean urisNull = (uris == null || uris.isEmpty());
-        if (urisNull) {
-            uris = List.of("");
+
+        boolean empty = (uris == null || uris.isEmpty());
+
+        if (empty) {
+            return unique
+                    ? repository.getStatsUniqueAll(start, end)
+                    : repository.getStatsTotalAll(start, end);
         }
+
         return unique
-                ? repository.getStatsUnique(start, end, uris, urisNull)
-                : repository.getStatsTotal(start, end, uris, urisNull);
+                ? repository.getStatsUnique(start, end, uris)
+                : repository.getStatsTotal(start, end, uris);
     }
 }

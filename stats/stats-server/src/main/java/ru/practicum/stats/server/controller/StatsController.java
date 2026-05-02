@@ -37,21 +37,15 @@ public class StatsController {
             LocalDateTime end,
 
             @RequestParam(required = false)
-            String uris,
+            List<String> uris,
 
             @RequestParam(defaultValue = "false")
             boolean unique
     ) {
-        if (start == null || end == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "start/end required");
-        }
-
         if (end.isBefore(start)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "end must be after start");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
-        List<String> uriList = uris != null ? Arrays.asList(uris.split(",")) : null;
-
-        return statsService.getStats(start, end, uriList, unique);
+        return statsService.getStats(start, end, uris, unique);
     }
 }
