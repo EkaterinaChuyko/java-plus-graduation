@@ -26,6 +26,7 @@ public class StatsServiceImpl implements StatsService {
                 .ip(dto.getIp())
                 .timestamp(dto.getTimestamp())
                 .build();
+
         repository.save(hit);
     }
 
@@ -36,10 +37,12 @@ public class StatsServiceImpl implements StatsService {
                                        List<String> uris,
                                        boolean unique) {
 
-        boolean useUris = uris != null && !uris.isEmpty();
+        List<String> safeUris = (uris == null) ? List.of() : uris;
 
-        return unique
-                ? repository.getStatsUnique(start, end, uris, useUris)
-                : repository.getStatsTotal(start, end, uris, useUris);
+        if (unique) {
+            return repository.getStatsUnique(start, end, safeUris, !safeUris.isEmpty());
+        } else {
+            return repository.getStatsTotal(start, end, safeUris, !safeUris.isEmpty());
+        }
     }
 }
