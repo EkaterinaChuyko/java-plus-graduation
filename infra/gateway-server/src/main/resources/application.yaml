@@ -15,13 +15,28 @@ spring:
     gateway:
       discovery:
         locator:
-          enabled: true
-          lower-case-service-id: true
+          enabled: false
+
       routes:
-        - id: main-service
+        - id: admin-users
           uri: lb://main-service
           predicates:
-            - Path=/users/**,/events/**,/compilations/**
+            - Path=/admin/**
+
+        - id: users
+          uri: lb://main-service
+          predicates:
+            - Path=/users/**
+
+        - id: events
+          uri: lb://main-service
+          predicates:
+            - Path=/events/**
+
+        - id: compilations
+          uri: lb://main-service
+          predicates:
+            - Path=/compilations/**
 
 eureka:
   client:
