@@ -31,23 +31,18 @@ public class StatsController {
 
     @GetMapping("/stats")
     public List<ViewStatsDto> getStats(
-            @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime start,
-
-            @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime end,
-
-            @RequestParam(required = false)
-            List<String> uris,
-
-            @RequestParam(defaultValue = "false")
-            boolean unique
+            @RequestParam String start,
+            @RequestParam String end,
+            @RequestParam(required = false) List<String> uris,
+            @RequestParam(defaultValue = "false") boolean unique
     ) {
-        if (!end.isAfter(start)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "end must be after start");
+        LocalDateTime startDate = LocalDateTime.parse(start.replace(" ", "T"));
+        LocalDateTime endDate = LocalDateTime.parse(end.replace(" ", "T"));
+
+        if (!endDate.isAfter(startDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
-        return statsService.getStats(start, end, uris, unique);
+
+        return statsService.getStats(startDate, endDate, uris, unique);
     }
 }
