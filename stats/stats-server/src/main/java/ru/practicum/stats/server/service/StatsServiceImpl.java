@@ -28,6 +28,7 @@ public class StatsServiceImpl implements StatsService {
                         ? dto.getTimestamp()
                         : LocalDateTime.now())
                 .build();
+
         repository.save(hit);
     }
 
@@ -37,14 +38,29 @@ public class StatsServiceImpl implements StatsService {
                                        LocalDateTime end,
                                        List<String> uris,
                                        boolean unique) {
-        boolean hasUris = uris != null && !uris.isEmpty();
-        if (!hasUris) {
+
+        List<String> safeUris = normalizeUris(uris);
+
+        if (safeUris.isEmpty()) {
             return unique
                     ? repository.getStatsUniqueAll(start, end)
                     : repository.getStatsTotalAll(start, end);
         }
+
         return unique
-                ? repository.getStatsUnique(start, end, uris)
-                : repository.getStatsTotal(start, end, uris);
+                ? repository.getStatsUnique(start, end, safeUris)
+                : repository.getStatsTotal(start, end, safeUris);
+    }
+
+    private List<String> normalizeUris(List<String> uris) {
+        if (uris == null) {
+            return List.of();
+        }
+
+        List<String> cleaned = uris.stream()
+                .filter(u -> u != null && !u.isBlank())
+                .toList();
+
+        return cleaned.isEmpty() ? List.of() : cleaned;
     }
 }
