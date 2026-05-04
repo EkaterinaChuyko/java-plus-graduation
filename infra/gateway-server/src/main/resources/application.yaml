@@ -17,19 +17,21 @@ spring:
 
       routes:
         - id: main-service
-          uri: lb://MAIN-SERVICE
+          uri: lb://main-service
           predicates:
             - Path=/admin/**,/users/**,/events/**,/compilations/**,/categories/**
 
-        - id: stats
-          uri: lb://STATS-SERVER
+        - id: stats-hit
+          uri: lb://stats-server
           predicates:
-            - Path=/stats,/stats/**,/hit,/hit/**
+            - Path=/hit/**
+
+        - id: stats
+          uri: lb://stats-server
+          predicates:
+            - Path=/stats/**
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
-
-  instance:
-    prefer-ip-address: true
