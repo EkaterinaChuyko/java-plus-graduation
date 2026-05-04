@@ -14,10 +14,15 @@ spring:
     password: pass
     driver-class-name: org.postgresql.Driver
 
+  sql:
+    init:
+      mode: always
+
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: false
+    defer-datasource-initialization: true
 
 eureka:
   client:
