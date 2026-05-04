@@ -24,9 +24,7 @@ public class StatsServiceImpl implements StatsService {
                 .app(dto.getApp())
                 .uri(dto.getUri())
                 .ip(dto.getIp())
-                .timestamp(dto.getTimestamp() != null
-                        ? dto.getTimestamp()
-                        : LocalDateTime.now())
+                .timestamp(dto.getTimestamp())
                 .build();
 
         repository.save(hit);
