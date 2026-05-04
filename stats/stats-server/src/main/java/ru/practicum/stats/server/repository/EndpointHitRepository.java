@@ -12,33 +12,33 @@ import java.util.List;
 public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long> {
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(
-            e.app,
-            e.uri,
-            COUNT(e.id) * 1L
-        )
-        FROM EndpointHit e
-        WHERE e.timestamp BETWEEN :start AND :end
-        GROUP BY e.app, e.uri
-        ORDER BY 3 DESC
-    """)
+    SELECT new ru.practicum.stats.dto.ViewStatsDto(
+        e.app,
+        e.uri,
+        COUNT(e.id)
+    )
+    FROM EndpointHit e
+    WHERE e.timestamp BETWEEN :start AND :end
+    GROUP BY e.app, e.uri
+    ORDER BY COUNT(e.id) DESC
+""")
     List<ViewStatsDto> getStatsTotalAll(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(
-            e.app,
-            e.uri,
-            COUNT(e.id) * 1L
-        )
-        FROM EndpointHit e
-        WHERE e.timestamp BETWEEN :start AND :end
-          AND e.uri IN :uris
-        GROUP BY e.app, e.uri
-        ORDER BY 3 DESC
-    """)
+    SELECT new ru.practicum.stats.dto.ViewStatsDto(
+        e.app,
+        e.uri,
+        COUNT(e.id)
+    )
+    FROM EndpointHit e
+    WHERE e.timestamp BETWEEN :start AND :end
+      AND e.uri IN :uris
+    GROUP BY e.app, e.uri
+    ORDER BY COUNT(e.id) DESC
+""")
     List<ViewStatsDto> getStatsTotal(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
@@ -46,33 +46,33 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
     );
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(
-            e.app,
-            e.uri,
-            COUNT(DISTINCT e.ip) * 1L
-        )
-        FROM EndpointHit e
-        WHERE e.timestamp BETWEEN :start AND :end
-        GROUP BY e.app, e.uri
-        ORDER BY 3 DESC
-    """)
+    SELECT new ru.practicum.stats.dto.ViewStatsDto(
+        e.app,
+        e.uri,
+        COUNT(DISTINCT e.ip)
+    )
+    FROM EndpointHit e
+    WHERE e.timestamp BETWEEN :start AND :end
+    GROUP BY e.app, e.uri
+    ORDER BY COUNT(DISTINCT e.ip) DESC
+""")
     List<ViewStatsDto> getStatsUniqueAll(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(
-            e.app,
-            e.uri,
-            COUNT(DISTINCT e.ip) * 1L
-        )
-        FROM EndpointHit e
-        WHERE e.timestamp BETWEEN :start AND :end
-          AND e.uri IN :uris
-        GROUP BY e.app, e.uri
-        ORDER BY 3 DESC
-    """)
+    SELECT new ru.practicum.stats.dto.ViewStatsDto(
+        e.app,
+        e.uri,
+        COUNT(DISTINCT e.ip)
+    )
+    FROM EndpointHit e
+    WHERE e.timestamp BETWEEN :start AND :end
+      AND e.uri IN :uris
+    GROUP BY e.app, e.uri
+    ORDER BY COUNT(DISTINCT e.ip) DESC
+""")
     List<ViewStatsDto> getStatsUnique(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
