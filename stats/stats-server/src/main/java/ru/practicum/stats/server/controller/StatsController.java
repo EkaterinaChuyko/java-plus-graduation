@@ -28,11 +28,11 @@ public class StatsController {
     @GetMapping("/stats")
     public List<ViewStatsDto> getStats(
             @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
             LocalDateTime start,
 
             @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
             LocalDateTime end,
 
             @RequestParam(required = false)
