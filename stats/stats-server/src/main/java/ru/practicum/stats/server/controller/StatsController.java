@@ -1,6 +1,5 @@
 package ru.practicum.stats.server.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -11,7 +10,6 @@ import ru.practicum.stats.dto.ViewStatsDto;
 import ru.practicum.stats.server.service.StatsService;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -22,7 +20,7 @@ public class StatsController {
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public HitDto hit(@Valid @RequestBody HitDto dto) {
+    public HitDto hit(@RequestBody HitDto dto) {
         statsService.saveHit(dto);
         return dto;
     }
@@ -43,10 +41,6 @@ public class StatsController {
             @RequestParam(defaultValue = "false")
             boolean unique
     ) {
-
-        if (start == null || end == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        }
 
         if (end.isBefore(start)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);

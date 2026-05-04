@@ -15,7 +15,7 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         SELECT new ru.practicum.stats.dto.ViewStatsDto(
             e.app,
             e.uri,
-            COUNT(e.id)
+            COUNT(e.id) * 1L
         )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
@@ -29,7 +29,7 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         SELECT new ru.practicum.stats.dto.ViewStatsDto(
             e.app,
             e.uri,
-            COUNT(e.id)
+            COUNT(e.id) * 1L
         )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
@@ -45,7 +45,7 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         SELECT new ru.practicum.stats.dto.ViewStatsDto(
             e.app,
             e.uri,
-            COUNT(DISTINCT e.ip)
+            COUNT(DISTINCT e.ip) * 1L
         )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
@@ -59,7 +59,7 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         SELECT new ru.practicum.stats.dto.ViewStatsDto(
             e.app,
             e.uri,
-            COUNT(DISTINCT e.ip)
+            COUNT(DISTINCT e.ip) * 1L
         )
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end

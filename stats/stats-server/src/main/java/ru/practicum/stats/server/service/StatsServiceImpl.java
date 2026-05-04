@@ -20,12 +20,16 @@ public class StatsServiceImpl implements StatsService {
     @Override
     @Transactional
     public void saveHit(HitDto dto) {
+
         EndpointHit hit = EndpointHit.builder()
                 .app(dto.getApp())
                 .uri(dto.getUri())
                 .ip(dto.getIp())
-                .timestamp(dto.getTimestamp())
+                .timestamp(dto.getTimestamp() != null
+                        ? dto.getTimestamp()
+                        : LocalDateTime.now())
                 .build();
+
         repository.save(hit);
     }
 
@@ -36,16 +40,14 @@ public class StatsServiceImpl implements StatsService {
                                        List<String> uris,
                                        boolean unique) {
 
-        List<String> safeUris = (uris == null || uris.isEmpty()) ? null : uris;
-
-        if (safeUris == null) {
+        if (uris == null || uris.isEmpty()) {
             return unique
                     ? repository.getStatsUniqueAll(start, end)
                     : repository.getStatsTotalAll(start, end);
         }
 
         return unique
-                ? repository.getStatsUnique(start, end, safeUris)
-                : repository.getStatsTotal(start, end, safeUris);
+                ? repository.getStatsUnique(start, end, uris)
+                : repository.getStatsTotal(start, end, uris);
     }
 }
