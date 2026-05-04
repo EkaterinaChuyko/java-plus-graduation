@@ -22,7 +22,10 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         GROUP BY e.app, e.uri
         ORDER BY COUNT(e.id) DESC
     """)
-    List<ViewStatsDto> getStatsTotalAll(LocalDateTime start, LocalDateTime end);
+    List<ViewStatsDto> getStatsTotalAll(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 
     @Query("""
         SELECT new ru.practicum.stats.dto.ViewStatsDto(
@@ -36,7 +39,11 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         GROUP BY e.app, e.uri
         ORDER BY COUNT(e.id) DESC
     """)
-    List<ViewStatsDto> getStatsTotal(LocalDateTime start, LocalDateTime end, List<String> uris);
+    List<ViewStatsDto> getStatsTotal(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("uris") List<String> uris
+    );
 
     @Query("""
         SELECT new ru.practicum.stats.dto.ViewStatsDto(
@@ -49,7 +56,10 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         GROUP BY e.app, e.uri
         ORDER BY COUNT(DISTINCT e.ip) DESC
     """)
-    List<ViewStatsDto> getStatsUniqueAll(LocalDateTime start, LocalDateTime end);
+    List<ViewStatsDto> getStatsUniqueAll(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 
     @Query("""
         SELECT new ru.practicum.stats.dto.ViewStatsDto(
@@ -63,5 +73,9 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
         GROUP BY e.app, e.uri
         ORDER BY COUNT(DISTINCT e.ip) DESC
     """)
-    List<ViewStatsDto> getStatsUnique(LocalDateTime start, LocalDateTime end, List<String> uris);
+    List<ViewStatsDto> getStatsUnique(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("uris") List<String> uris
+    );
 }
