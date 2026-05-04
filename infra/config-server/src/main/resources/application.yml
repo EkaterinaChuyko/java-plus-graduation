@@ -5,14 +5,14 @@ spring:
   application:
     name: config-server
 
+  profiles:
+    active: native
+
   cloud:
     config:
       server:
         native:
           search-locations: classpath:/config
-
-  profiles:
-    active: native
 
 eureka:
   client:
@@ -21,3 +21,4 @@ eureka:
 
   instance:
     prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
