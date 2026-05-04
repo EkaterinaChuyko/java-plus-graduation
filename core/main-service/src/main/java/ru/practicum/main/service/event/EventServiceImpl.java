@@ -239,7 +239,7 @@ public class EventServiceImpl implements EventService {
     /* Helpers */
     private void safeAddHit(String uri, String ip) {
         try {
-            statsClient.hit(buildHit("ewm-main-service", uri, ip, LocalDateTime.now()));
+            statsClient.hit(buildHit("main-service", uri, ip, LocalDateTime.now()));
         } catch (Exception e) {
             log.warn("Could not save stats hit: {}", e.getMessage());
         }
@@ -283,7 +283,11 @@ public class EventServiceImpl implements EventService {
                     List.of("/events/" + eventId),
                     true
             );
-            return stats.isEmpty() ? 0 : stats.get(0).getHits();
+
+            return stats.stream()
+                    .mapToLong(ViewStatsDto::getHits)
+                    .sum();
+
         } catch (Exception e) {
             return 0;
         }

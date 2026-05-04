@@ -21,15 +21,10 @@ spring:
           predicates:
             - Path=/admin/**,/users/**,/events/**,/compilations/**,/categories/**
 
-        - id: stats-hit
-          uri: lb://STATS-SERVER
-          predicates:
-            - Path=/hit/**
-
         - id: stats
           uri: lb://STATS-SERVER
           predicates:
-            - Path=/stats/**
+            - Path=/stats,/stats/**,/hit,/hit/**
 
 eureka:
   client:

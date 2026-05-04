@@ -42,6 +42,11 @@ public class StatsController {
             @RequestParam(defaultValue = "false")
             boolean unique
     ) {
+
+        if (start == null || end == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+
         if (end.isBefore(start)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
