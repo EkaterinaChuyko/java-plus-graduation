@@ -2,7 +2,6 @@ package ru.practicum.stats.server.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -16,33 +15,26 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class StatsController {
 
     private final StatsService statsService;
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public void saveHit(@Valid @RequestBody HitDto endpointHitDto) {
-        log.info("Controller: request to save new hit received.");
-        log.debug("Saving new hit: {}", endpointHitDto);
-        statsService.saveHit(endpointHitDto);
+    public void hit(@Valid @RequestBody HitDto dto) {
+        statsService.saveHit(dto);
     }
 
     @GetMapping("/stats")
     public List<ViewStatsDto> getStats(
-            @RequestParam String start,
-            @RequestParam String end,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") boolean unique
     ) {
-        LocalDateTime startDate = LocalDateTime.parse(start.replace(" ", "T"));
-        LocalDateTime endDate = LocalDateTime.parse(end.replace(" ", "T"));
-
-        if (!endDate.isAfter(startDate)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        if (end.isBefore(start)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "end must be after start");
         }
-
-        return statsService.getStats(startDate, endDate, uris, unique);
+        return statsService.getStats(start, end, uris, unique);
     }
 }
