@@ -23,9 +23,8 @@ public class StatsController {
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public HitDto hit(@Valid @RequestBody HitDto dto) {
+    public void hit(@Valid @RequestBody HitDto dto) {
         statsService.saveHit(dto);
-        return dto;
     }
 
     @GetMapping("/stats")
@@ -44,7 +43,6 @@ public class StatsController {
             @RequestParam(defaultValue = "false")
             boolean unique
     ) {
-
         if (end.isBefore(start)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
