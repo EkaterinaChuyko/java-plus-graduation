@@ -38,8 +38,8 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
-    private final StatsClient statsClient;
     private final RatingService ratingService;
+    private final StatsClient statsClient;
 
     @Override
     @Transactional
@@ -113,30 +113,34 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventRequestStatusUpdateResult changeRequestStatus(Long userId, Long eventId,
-                                                              EventRequestStatusUpdateRequest dto) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event not found"));
+    public EventRequestStatusUpdateResult changeRequestStatus(Long userId, Long eventId, EventRequestStatusUpdateRequest dto) {
+        Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
         if (!event.getInitiatorId().equals(userId)) {
             throw new ConflictException("User is not initiator");
         }
+
         long confirmedCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-        List<ParticipationRequest> requests =
-                requestRepository.findAllByEventIdAndIdIn(eventId, dto.getRequestIds());
+        if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
+            throw new ConflictException("The participant limit has been reached");
+        }
+
+        List<ParticipationRequest> requests = requestRepository.findAllByEventIdAndIdIn(eventId, dto.getRequestIds());
         List<ParticipationRequestDto> confirmed = new ArrayList<>();
         List<ParticipationRequestDto> rejected = new ArrayList<>();
+
         for (ParticipationRequest req : requests) {
             if (req.getStatus() != RequestStatus.PENDING) {
-                throw new ConflictException("Request is not in PENDING state");
+                throw new ConflictException("Request must be PENDING");
             }
             if (dto.getStatus() == EventRequestStatusUpdateRequest.Status.CONFIRMED) {
-                if (event.getParticipantLimit() > 0
-                    && confirmedCount >= event.getParticipantLimit()) {
-                    throw new ConflictException("Participant limit reached");
+                if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
+                    req.setStatus(RequestStatus.REJECTED);
+                    rejected.add(RequestMapper.toDto(requestRepository.save(req)));
+                } else {
+                    req.setStatus(RequestStatus.CONFIRMED);
+                    confirmed.add(RequestMapper.toDto(requestRepository.save(req)));
+                    confirmedCount++;
                 }
-                req.setStatus(RequestStatus.CONFIRMED);
-                confirmed.add(RequestMapper.toDto(requestRepository.save(req)));
-                confirmedCount++;
             } else {
                 req.setStatus(RequestStatus.REJECTED);
                 rejected.add(RequestMapper.toDto(requestRepository.save(req)));
@@ -239,7 +243,7 @@ public class EventServiceImpl implements EventService {
     /* Helpers */
     private void safeAddHit(String uri, String ip) {
         try {
-            statsClient.hit(buildHit("main-service", uri, ip, LocalDateTime.now()));
+            statsClient.hit(buildHit("ewm-main-service", uri, ip, LocalDateTime.now()));
         } catch (Exception e) {
             log.warn("Could not save stats hit: {}", e.getMessage());
         }
@@ -283,11 +287,7 @@ public class EventServiceImpl implements EventService {
                     List.of("/events/" + eventId),
                     true
             );
-
-            return stats.stream()
-                    .mapToLong(ViewStatsDto::getHits)
-                    .sum();
-
+            return stats.isEmpty() ? 0 : stats.get(0).getHits();
         } catch (Exception e) {
             return 0;
         }
