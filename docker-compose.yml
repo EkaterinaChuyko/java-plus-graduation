@@ -33,6 +33,9 @@ services:
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: pass
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
+
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_APPLICATION_NAME: stats-server
     depends_on:
       stats-db:
         condition: service_healthy
@@ -40,7 +43,6 @@ services:
     networks:
       - ewm-network
 
-#Заглушка основого сервиса
   ewm-db:
     image: postgres:16.1
     container_name: ewm-db
@@ -67,7 +69,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: pass
+
+
       STATS_SERVER_URL: http://stats-server:9090
+
+      SPRING_APPLICATION_NAME: main-service
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
     depends_on:
       - ewm-db
       - stats-server

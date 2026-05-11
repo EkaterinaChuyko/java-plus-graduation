@@ -1,0 +1,6 @@
+stats:
+  client:
+    retry:
+      max-attempts: 3
+      fixed:
+        delay: 3000
