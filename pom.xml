@@ -20,7 +20,7 @@
 		<module>stats-service</module>
 		<module>infra</module>
 		<module>core</module>
-	</modules>
+    </modules>
 
 	<properties>
 		<java.version>21</java.version>
