@@ -1,53 +1,10 @@
-server:
-  port: 8080
-
 spring:
   application:
     name: gateway-server
-
-  main:
-    web-application-type: reactive
-
+  config:
+    import: "optional:configserver:"
   cloud:
-    gateway:
+    config:
       discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-
-      routes:
-
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/users/**,/admin/**
-
-        - id: event-service
-          uri: lb://event-service
-          predicates:
-            - Path=/events/**,/compilations/**,/categories/**
-
-        - id: request-service
-          uri: lb://request-service
-          predicates:
-            - Path=/requests/**
-
-        - id: rating-service
-          uri: lb://rating-service
-          predicates:
-            - Path=/ratings/**
-
-        - id: stats-hit
-          uri: lb://stats-server
-          predicates:
-            - Path=/hit/**
-
-        - id: stats
-          uri: lb://stats-server
-          predicates:
-            - Path=/stats/**
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
+        enabled: true
+        service-id: config-server

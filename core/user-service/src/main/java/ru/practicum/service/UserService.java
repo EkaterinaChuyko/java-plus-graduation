@@ -1,7 +1,8 @@
 package ru.practicum.service;
 
-import ru.practicum.user.dto.NewUserRequest;
-import ru.practicum.user.dto.UserDto;
+import ru.practicum.dto.user.NewUserRequest;
+import ru.practicum.dto.user.UserDto;
+import ru.practicum.model.User;
 
 import java.util.List;
 
@@ -12,4 +13,8 @@ public interface UserService {
     List<UserDto> getUsers(List<Long> ids, int from, int size);
 
     void deleteUser(Long userId);
+
+    User getUserById(Long userId);
+
+    boolean existsById(Long userId);
 }

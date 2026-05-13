@@ -1,14 +1,13 @@
 package ru.practicum.controller.privateapi;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import ru.practicum.request.RateEventRequest;
+import ru.practicum.dto.rating.RateEventRequest;
 import ru.practicum.service.RatingService;
 
 @RestController

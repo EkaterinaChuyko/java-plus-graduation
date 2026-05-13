@@ -2,9 +2,9 @@ package ru.practicum.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.event.dto.event.EventFullDto;
-import ru.practicum.event.dto.event.EventShortDto;
-import ru.practicum.event.dto.event.NewEventDto;
+import ru.practicum.dto.event.EventFullDto;
+import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.dto.event.NewEventDto;
 import ru.practicum.request.UpdateEventAdminRequest;
 import ru.practicum.request.UpdateEventUserRequest;
 

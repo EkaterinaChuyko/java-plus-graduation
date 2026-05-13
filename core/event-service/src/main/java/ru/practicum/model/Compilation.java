@@ -12,7 +12,6 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Compilation {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,11 +22,9 @@ public class Compilation {
     @Column(nullable = false, length = 50)
     private String title;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "compilation_events",
-            joinColumns = @JoinColumn(name = "compilation_id")
-    )
-    @Column(name = "event_id")
-    private Set<Long> eventIds;
+    @ManyToMany
+    @JoinTable(name = "compilation_events",
+            joinColumns = @JoinColumn(name = "compilation_id"),
+            inverseJoinColumns = @JoinColumn(name = "event_id"))
+    private Set<Event> events;
 }

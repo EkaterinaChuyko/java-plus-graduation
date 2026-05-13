@@ -4,19 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.ConflictException;
-import ru.practicum.NotFoundException;
-import ru.practicum.client.EventClient;
-import ru.practicum.client.RequestClient;
-import ru.practicum.client.UserClient;
-import ru.practicum.event.dto.event.EventFullDto;
-import ru.practicum.event.dto.event.EventState;
+import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.dto.rating.RateEventRequest;
+import ru.practicum.dto.rating.RatingDto;
+import ru.practicum.exception.ConflictException;
+import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.RatingMapper;
-import ru.practicum.rating.dto.EventRating;
-import ru.practicum.rating.dto.RatingDto;
+import ru.practicum.model.EventRating;
 import ru.practicum.repository.RatingRepository;
-import ru.practicum.request.RateEventRequest;
-import ru.practicum.user.dto.UserDto;
 
 import java.time.LocalDateTime;
 
@@ -27,9 +22,7 @@ import java.time.LocalDateTime;
 public class RatingServiceImpl implements RatingService {
 
     private final RatingRepository ratingRepository;
-    private final UserClient userClient;
-    private final EventClient eventClient;
-    private final RequestClient requestClient;
+    private final RatingCircuitBreakerService circuitBreakerService;
 
     @Override
     @Transactional
@@ -37,30 +30,28 @@ public class RatingServiceImpl implements RatingService {
 
         log.debug("User {} rating event {} as {}", userId, request.getEventId(), request.getIsLike());
 
-        UserDto user = userClient.getUserById(userId);
-        if (user == null) {
+        if (!Boolean.TRUE.equals(circuitBreakerService.userExists(userId))) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
 
-        EventFullDto event = eventClient.getEvent(request.getEventId());
-        if (event == null) {
-            throw new NotFoundException("Event not found");
+        EventShortDto event;
+        try {
+            event = circuitBreakerService.getEventById(request.getEventId());
+        } catch (Exception e) {
+            throw new NotFoundException("Event with id=" + request.getEventId() + " was not found");
         }
 
-        if (event.getInitiator().getId().equals(userId)) {
+        if (event.getInitiator() != null &&
+            event.getInitiator().getId().equals(userId)) {
             throw new ConflictException("Cannot rate own event");
         }
 
-        if (event.getState() != EventState.PUBLISHED) {
+        if (event.getState() == null ||
+            !"PUBLISHED".equals(event.getState())) {
             throw new ConflictException("Cannot rate unpublished event");
         }
 
-        Boolean participated = requestClient.hasConfirmedRequest(
-                userId,
-                request.getEventId()
-        );
-
-        if (!Boolean.TRUE.equals(participated)) {
+        if (!circuitBreakerService.hasUserParticipated(userId, request.getEventId())) {
             throw new ConflictException("Must have participated in event to rate it");
         }
 
@@ -68,28 +59,36 @@ public class RatingServiceImpl implements RatingService {
                 .findByUserIdAndEventId(userId, request.getEventId())
                 .orElse(null);
 
+        EventRating rating;
+
         if (existingRating != null) {
             existingRating.setIsLike(request.getIsLike());
             existingRating.setCreated(LocalDateTime.now());
-            ratingRepository.save(existingRating);
+            rating = existingRating;
+
+            log.info("User {} updated rating for event {} to {}",
+                    userId, request.getEventId(),
+                    request.getIsLike() ? "like" : "dislike");
 
         } else {
-            EventRating rating = EventRating.builder()
+            rating = EventRating.builder()
                     .userId(userId)
                     .eventId(request.getEventId())
                     .isLike(request.getIsLike())
                     .created(LocalDateTime.now())
                     .build();
 
-            ratingRepository.save(rating);
+            log.info("User {} rated event {} as {}",
+                    userId, request.getEventId(),
+                    request.getIsLike() ? "like" : "dislike");
         }
+
+        ratingRepository.save(rating);
     }
 
     @Override
     public RatingDto getEventRating(Long eventId) {
-
-        EventFullDto event = eventClient.getEvent(eventId);
-        if (event == null) {
+        if (!Boolean.TRUE.equals(circuitBreakerService.eventExists(eventId))) {
             throw new NotFoundException("Event not found");
         }
 
@@ -99,7 +98,7 @@ public class RatingServiceImpl implements RatingService {
 
         if (total == 0) {
             return RatingDto.builder()
-                    .score(null)
+                    .score(0)
                     .likes(0L)
                     .dislikes(0L)
                     .total(0L)
@@ -112,7 +111,6 @@ public class RatingServiceImpl implements RatingService {
     @Override
     @Transactional
     public void deleteRating(Long userId, Long eventId) {
-
         EventRating rating = ratingRepository.findByUserIdAndEventId(userId, eventId)
                 .orElseThrow(() -> new NotFoundException("Rating not found"));
 

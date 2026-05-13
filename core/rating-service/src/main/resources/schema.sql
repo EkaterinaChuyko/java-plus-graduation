@@ -3,8 +3,6 @@ CREATE TABLE IF NOT EXISTS event_ratings (
     user_id BIGINT NOT NULL,
     event_id BIGINT NOT NULL,
     is_like BOOLEAN NOT NULL,
-    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_event_ratings_user_event UNIQUE (user_id, event_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+    created TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, event_id)
 );

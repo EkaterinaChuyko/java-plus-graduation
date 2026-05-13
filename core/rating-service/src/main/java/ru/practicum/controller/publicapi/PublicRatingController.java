@@ -1,12 +1,14 @@
 package ru.practicum.controller.publicapi;
 
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.constraints.Min;
-import ru.practicum.rating.dto.RatingDto;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.dto.rating.RatingDto;
 import ru.practicum.service.RatingService;
 
 @RestController

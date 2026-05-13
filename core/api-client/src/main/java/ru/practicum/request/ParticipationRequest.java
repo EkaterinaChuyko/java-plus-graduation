@@ -1,6 +1,9 @@
 package ru.practicum.request;
+
+
 import jakarta.persistence.*;
 import lombok.*;
+import ru.practicum.dto.enums.RequestStatus;
 
 import java.time.LocalDateTime;
 

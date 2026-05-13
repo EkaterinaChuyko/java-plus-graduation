@@ -2,11 +2,9 @@ package ru.practicum.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import ru.practicum.event.dto.event.EventState;
-import ru.practicum.rating.dto.EventRating;
+import ru.practicum.dto.enums.EventState;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "events")

@@ -1,12 +1,16 @@
 package ru.practicum.service.event;
 
-import ru.practicum.event.dto.event.EventFullDto;
-import ru.practicum.event.dto.event.EventShortDto;
-import ru.practicum.event.dto.event.NewEventDto;
-import ru.practicum.request.*;
+import ru.practicum.dto.event.EventFullDto;
+import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.dto.event.NewEventDto;
+import ru.practicum.dto.request.ParticipationRequestDto;
+import ru.practicum.request.EventRequestStatusUpdateRequest;
+import ru.practicum.request.EventRequestStatusUpdateResult;
+import ru.practicum.request.UpdateEventAdminRequest;
+import ru.practicum.request.UpdateEventUserRequest;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 public interface EventService {
 

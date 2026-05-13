@@ -1,16 +1,22 @@
 package ru.practicum.mapper;
 
-import ru.practicum.event.dto.category.CategoryDto;
-import ru.practicum.event.dto.event.*;
+import org.springframework.stereotype.Component;
+import ru.practicum.dto.enums.EventState;
+import ru.practicum.dto.category.CategoryDto;
+import ru.practicum.dto.event.EventFullDto;
+import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.dto.event.LocationDto;
+import ru.practicum.dto.event.NewEventDto;
+import ru.practicum.dto.rating.RatingDto;
+import ru.practicum.dto.user.UserShortDto;
 import ru.practicum.model.Event;
-import ru.practicum.rating.dto.RatingDto;
 import ru.practicum.request.UpdateEventAdminRequest;
 import ru.practicum.request.UpdateEventUserRequest;
-import ru.practicum.user.dto.UserShortDto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+@Component
 public class EventMapper {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -34,44 +40,40 @@ public class EventMapper {
     }
 
     public static EventShortDto toShort(Event e, CategoryDto catDto, UserShortDto userDto,
-                                        long views, long confirmedRequests, RatingDto rating) {
-        return new EventShortDto(
-                e.getId(),
-                e.getAnnotation(),
-                catDto,
-                confirmedRequests,
-                e.getEventDate(),
-                userDto,
-                e.getPaid(),
-                e.getTitle(),
-                views,
-                rating
-        );
+                                        Long views, Long confirmedRequests, RatingDto rating) {
+        EventShortDto dto = new EventShortDto();
+        dto.setId(e.getId());
+        dto.setAnnotation(e.getAnnotation());
+        dto.setCategory(catDto);
+        dto.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+        dto.setEventDate(e.getEventDate() != null ? e.getEventDate().format(FORMATTER) : null);
+        dto.setInitiator(userDto);
+        dto.setPaid(e.getPaid());
+        dto.setTitle(e.getTitle());
+        dto.setViews(views != null ? views : 0L);
+        dto.setRating(rating);
+        return dto;
     }
 
     public static EventShortDto toShort(Event e, CategoryDto catDto, UserShortDto userDto,
-                                        long views, long confirmedRequests) {
+                                        Long views, Long confirmedRequests) {
         return toShort(e, catDto, userDto, views, confirmedRequests, null);
     }
 
-    public static EventShortDto toShort(Event e, long views) {
-        return new EventShortDto(
-                e.getId(),
-                e.getAnnotation(),
-                null,
-                0L,
-                e.getEventDate(),
-                null,
-                e.getPaid(),
-                e.getTitle(),
-                views,
-                null
-        );
+    public static EventShortDto toShort(Event e, Long views) {
+        EventShortDto dto = new EventShortDto();
+        dto.setId(e.getId());
+        dto.setAnnotation(e.getAnnotation());
+        dto.setConfirmedRequests(0L);
+        dto.setEventDate(e.getEventDate() != null ? e.getEventDate().format(FORMATTER) : null);
+        dto.setPaid(e.getPaid());
+        dto.setTitle(e.getTitle());
+        dto.setViews(views != null ? views : 0L);
+        return dto;
     }
 
     public static EventFullDto toFull(Event e, CategoryDto catDto, UserShortDto userDto,
-                                      long views, long confirmedRequests, RatingDto rating) {
-
+                                      Long views, Long confirmedRequests, RatingDto rating) {
         LocationDto loc = new LocationDto(e.getLocationLat(), e.getLocationLon());
 
         return EventFullDto.builder()
@@ -79,20 +81,25 @@ public class EventMapper {
                 .annotation(e.getAnnotation())
                 .description(e.getDescription())
                 .category(catDto)
-                .confirmedRequests(confirmedRequests)
-                .eventDate(e.getEventDate())
+                .confirmedRequests(confirmedRequests != null ? confirmedRequests : 0L)
+                .eventDate(e.getEventDate() != null ? e.getEventDate().format(FORMATTER) : null)
                 .initiator(userDto)
                 .location(loc)
                 .paid(e.getPaid())
                 .participantLimit(e.getParticipantLimit())
                 .requestModeration(e.getRequestModeration())
-                .state(e.getState())
-                .createdOn(e.getCreatedOn())
-                .publishedOn(e.getPublishedOn())
+                .state(e.getState().name())
+                .createdOn(e.getCreatedOn() != null ? e.getCreatedOn().format(FORMATTER) : null)
+                .publishedOn(e.getPublishedOn() != null ? e.getPublishedOn().format(FORMATTER) : null)
                 .title(e.getTitle())
-                .views(views)
+                .views(views != null ? views : 0L)
                 .rating(rating)
                 .build();
+    }
+
+    public static EventFullDto toFull(Event e, CategoryDto catDto, UserShortDto userDto,
+                                      Long views, Long confirmedRequests) {
+        return toFull(e, catDto, userDto, views, confirmedRequests, null);
     }
 
     public static void applyUserUpdate(Event e, UpdateEventUserRequest dto) {
@@ -123,50 +130,5 @@ public class EventMapper {
         if (dto.getPaid() != null) e.setPaid(dto.getPaid());
         if (dto.getParticipantLimit() != null) e.setParticipantLimit(dto.getParticipantLimit());
         if (dto.getRequestModeration() != null) e.setRequestModeration(dto.getRequestModeration());
-    }
-
-    public static EventFullDto toFullFromDto(EventFullDto dto,
-                                             long views,
-                                             long confirmed,
-                                             RatingDto rating) {
-
-        return EventFullDto.builder()
-                .id(dto.getId())
-                .annotation(dto.getAnnotation())
-                .description(dto.getDescription())
-                .category(dto.getCategory())
-                .confirmedRequests(confirmed)
-                .eventDate(dto.getEventDate())
-                .initiator(dto.getInitiator())
-                .location(dto.getLocation())
-                .paid(dto.getPaid())
-                .participantLimit(dto.getParticipantLimit())
-                .requestModeration(dto.getRequestModeration())
-                .state(dto.getState())
-                .createdOn(dto.getCreatedOn())
-                .publishedOn(dto.getPublishedOn())
-                .title(dto.getTitle())
-                .views(views)
-                .rating(rating)
-                .build();
-    }
-
-    public static EventShortDto toShortFromDto(EventFullDto dto,
-                                               long views,
-                                               long confirmed,
-                                               RatingDto rating) {
-
-        return EventShortDto.builder()
-                .id(dto.getId())
-                .annotation(dto.getAnnotation())
-                .category(dto.getCategory())
-                .confirmedRequests(confirmed)
-                .eventDate(dto.getEventDate())
-                .initiator(dto.getInitiator())
-                .paid(dto.getPaid())
-                .title(dto.getTitle())
-                .views(views)
-                .rating(rating)
-                .build();
     }
 }

@@ -6,13 +6,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.AlreadyExistsException;
-import ru.practicum.NotFoundException;
+import ru.practicum.exception.AlreadyExistsException;
+import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.UserMapper;
 import ru.practicum.model.User;
 import ru.practicum.repository.UserRepository;
-import ru.practicum.user.dto.NewUserRequest;
-import ru.practicum.user.dto.UserDto;
+import ru.practicum.dto.user.NewUserRequest;
+import ru.practicum.dto.user.UserDto;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
@@ -32,11 +33,11 @@ public class UserServiceImpl implements UserService {
 
         checkEmailUniqueness(newUserRequest.getEmail());
 
-        User user = UserMapper.toEntity(newUserRequest);
+        User user = userMapper.toEntity(newUserRequest);
         User savedUser = userRepository.save(user);
 
         log.info("User created with id: {}", savedUser.getId());
-        return UserMapper.toDto(savedUser);
+        return userMapper.toDto(savedUser);
     }
 
     @Override
@@ -54,9 +55,7 @@ public class UserServiceImpl implements UserService {
             users = userRepository.findAllById(ids);
         }
 
-        return users.stream()
-                .map(UserMapper::toDto)
-                .collect(Collectors.toList());
+        return users.stream().map(userMapper::toDto).collect(Collectors.toList());
     }
 
     @Override
@@ -70,6 +69,18 @@ public class UserServiceImpl implements UserService {
 
         userRepository.deleteById(userId);
         log.info("User with id: {} deleted", userId);
+    }
+
+    @Override
+    public User getUserById(Long userId) {
+        log.debug("Getting user by id: {}", userId);
+        return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+    }
+
+    @Override
+    public boolean existsById(Long userId) {
+        log.debug("Checking if user exists by id: {}", userId);
+        return userRepository.existsById(userId);
     }
 
     private void checkEmailUniqueness(String email) {

@@ -2,7 +2,7 @@ package ru.practicum.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.request.ParticipationRequestDto;
+import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.request.EventRequestStatusUpdateRequest;
 import ru.practicum.request.EventRequestStatusUpdateResult;
 
@@ -14,34 +14,52 @@ import java.util.Set;
 public interface RequestClient {
 
     @GetMapping("/internal/requests/event/{eventId}")
-    List<ParticipationRequestDto> getEventRequests(@PathVariable("eventId") Long eventId);
+    List<ParticipationRequestDto> getEventRequests(
+            @PathVariable("eventId") Long eventId
+    );
 
-    @PatchMapping("/internal/requests/event/{eventId}")
-    EventRequestStatusUpdateResult updateRequestStatus(@PathVariable("eventId") Long eventId,
-                                                       @RequestBody EventRequestStatusUpdateRequest request);
+    @PatchMapping("/internal/requests/event/{eventId}/status")
+    EventRequestStatusUpdateResult updateRequestStatus(
+            @PathVariable("eventId") Long eventId,
+            @RequestBody EventRequestStatusUpdateRequest request
+    );
 
-    @GetMapping("/internal/requests/user/{userId}/event/{eventId}")
-    ParticipationRequestDto getUserRequest(@PathVariable("userId") Long userId,
-                                           @PathVariable("eventId") Long eventId);
+    @GetMapping("/internal/requests")
+    ParticipationRequestDto getUserRequest(
+            @RequestParam("userId") Long userId,
+            @RequestParam("eventId") Long eventId
+    );
 
     @PostMapping("/internal/requests")
-    ParticipationRequestDto createRequest(@RequestParam("userId") Long userId,
-                                          @RequestParam("eventId") Long eventId);
+    ParticipationRequestDto createRequest(
+            @RequestParam("userId") Long userId,
+            @RequestParam("eventId") Long eventId
+    );
 
     @PatchMapping("/internal/requests/{requestId}/cancel")
-    ParticipationRequestDto cancelRequest(@RequestParam("userId") Long userId,
-                                          @PathVariable("requestId") Long requestId);
+    ParticipationRequestDto cancelRequest(
+            @PathVariable("requestId") Long requestId,
+            @RequestParam("userId") Long userId
+    );
 
     @GetMapping("/internal/requests/user/{userId}")
-    List<ParticipationRequestDto> getUserRequests(@PathVariable("userId") Long userId);
+    List<ParticipationRequestDto> getUserRequests(
+            @PathVariable("userId") Long userId
+    );
 
     @GetMapping("/internal/requests/event/{eventId}/confirmed/count")
-    Long getConfirmedRequestsCount(@PathVariable("eventId") Long eventId);
+    Long getConfirmedRequestsCount(
+            @PathVariable("eventId") Long eventId
+    );
 
     @GetMapping("/internal/requests/events/confirmed/count")
-    Map<Long, Long> getConfirmedRequestsCounts(@RequestParam("eventIds") Set<Long> eventIds);
+    Map<Long, Long> getConfirmedRequestsCounts(
+            @RequestParam("eventIds") Set<Long> eventIds
+    );
 
-    @GetMapping("/internal/requests/user/{userId}/event/{eventId}/exists/confirmed")
-    Boolean hasConfirmedRequest(@PathVariable("userId") Long userId,
-                                @PathVariable("eventId") Long eventId);
+    @GetMapping("/internal/requests/confirmed")
+    Boolean hasConfirmedRequest(
+            @RequestParam("userId") Long userId,
+            @RequestParam("eventId") Long eventId
+    );
 }

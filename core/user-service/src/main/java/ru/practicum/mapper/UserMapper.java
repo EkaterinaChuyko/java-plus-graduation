@@ -1,12 +1,13 @@
 package ru.practicum.mapper;
 
-import lombok.experimental.UtilityClass;
+import org.springframework.stereotype.Component;
+import ru.practicum.dto.user.UserShortDto;
 import ru.practicum.model.User;
-import ru.practicum.user.dto.NewUserRequest;
-import ru.practicum.user.dto.UpdateUserRequest;
-import ru.practicum.user.dto.UserDto;
+import ru.practicum.dto.user.NewUserRequest;
+import ru.practicum.dto.user.UpdateUserRequest;
+import ru.practicum.dto.user.UserDto;
 
-@UtilityClass
+@Component
 public class UserMapper {
 
     public User toEntity(NewUserRequest dto) {
@@ -32,5 +33,10 @@ public class UserMapper {
             user.setEmail(dto.getEmail());
         }
         return user;
+    }
+
+    public static UserShortDto toShortDto(User entity) {
+        if (entity == null) return null;
+        return new UserShortDto(entity.getId(), entity.getName());
     }
 }

@@ -2,7 +2,7 @@ package ru.practicum.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import ru.practicum.request.RequestStatus;
+import ru.practicum.dto.enums.RequestStatus;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +19,7 @@ public class Request {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "created", nullable = false)
     private LocalDateTime created;
 
     @Column(name = "event_id", nullable = false)
@@ -29,6 +29,6 @@ public class Request {
     private Long requesterId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private RequestStatus status;
 }

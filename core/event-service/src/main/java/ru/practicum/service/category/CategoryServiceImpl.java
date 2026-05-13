@@ -1,13 +1,13 @@
 package ru.practicum.service.category;
 
-import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.ConflictException;
-import ru.practicum.event.dto.category.CategoryDto;
-import ru.practicum.event.dto.category.NewCategoryDto;
+import ru.practicum.dto.category.CategoryDto;
+import ru.practicum.dto.category.NewCategoryDto;
+import ru.practicum.exception.ConflictException;
+import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CategoryMapper;
 import ru.practicum.model.Category;
 import ru.practicum.repository.CategoryRepository;
@@ -23,12 +23,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final EventRepository eventRepository;
+    private final CategoryMapper categoryMapper;
 
+    @Override
     @Transactional
-    public CategoryDto createCategory(NewCategoryDto dto) {
-        Category category = CategoryMapper.toEntity(dto);
-        Category saved = categoryRepository.save(category);
-        return CategoryMapper.toDto(saved);
+    public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
+        Category category = categoryMapper.toEntity(newCategoryDto);
+        return categoryMapper.toDto(categoryRepository.save(category));
     }
 
     @Override
@@ -37,7 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
         category.setName(categoryDto.getName());
-        return CategoryMapper.toDto(categoryRepository.save(category));
+        return categoryMapper.toDto(categoryRepository.save(category));
     }
 
     @Override
@@ -57,7 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<CategoryDto> getAllCategories(int from, int size) {
         return categoryRepository.findAll(PageRequest.of(from / size, size)).stream()
-                .map(CategoryMapper::toDto)
+                .map(categoryMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -65,6 +66,6 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto getCategoryById(Long catId) {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-        return CategoryMapper.toDto(category);
+        return categoryMapper.toDto(category);
     }
 }

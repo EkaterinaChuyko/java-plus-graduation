@@ -1,6 +1,6 @@
 package ru.practicum.mapper;
 
-import ru.practicum.rating.dto.RatingDto;
+import ru.practicum.dto.rating.RatingDto;
 
 public class RatingMapper {
     public static RatingDto toRatingDto(Long eventId, Long likes, Long dislikes) {

@@ -3,8 +3,8 @@ package ru.practicum.stats.server.repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import ru.practicum.dto.stats.ViewStatsDto;
 import ru.practicum.stats.server.model.EndpointHit;
-import ru.practicum.stats.dto.ViewStatsDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
 public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long> {
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(e.id))
+        SELECT new ru.practicum.dto.stats.ViewStatsDto(e.app, e.uri, COUNT(e.id))
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
           AND (:urisNull = true OR e.uri IN :uris)
@@ -25,7 +25,7 @@ public interface EndpointHitRepository extends CrudRepository<EndpointHit, Long>
                                      @Param("urisNull") boolean urisNull);
 
     @Query("""
-        SELECT new ru.practicum.stats.dto.ViewStatsDto(e.app, e.uri, COUNT(DISTINCT e.ip))
+        SELECT new ru.practicum.dto.stats.ViewStatsDto(e.app, e.uri, COUNT(DISTINCT e.ip))
         FROM EndpointHit e
         WHERE e.timestamp BETWEEN :start AND :end
           AND (:urisNull = true OR e.uri IN :uris)

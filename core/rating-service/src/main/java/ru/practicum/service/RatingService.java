@@ -1,7 +1,7 @@
 package ru.practicum.service;
 
-import ru.practicum.rating.dto.RatingDto;
-import ru.practicum.request.RateEventRequest;
+import ru.practicum.dto.rating.RateEventRequest;
+import ru.practicum.dto.rating.RatingDto;
 
 public interface RatingService {
     void rateEvent(Long userId, RateEventRequest request);
