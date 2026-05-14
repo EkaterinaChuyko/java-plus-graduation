@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.exception.AlreadyExistsException;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.UserMapper;
 import ru.practicum.model.User;
@@ -85,7 +86,7 @@ public class UserServiceImpl implements UserService {
 
     private void checkEmailUniqueness(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new AlreadyExistsException("Email '" + email + "' already exists");
+            throw new ConflictException("Email '" + email + "' already exists");
         }
     }
 

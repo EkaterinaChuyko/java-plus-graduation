@@ -58,11 +58,12 @@ public class EventServiceImpl implements EventService {
     private final UserClient userClient;
     private final RequestClient requestClient;
     private final EventCircuitBreakerService circuitBreakerService;
+    private final EventMapper eventMapper;
 
     @Override
     @Transactional
     public EventFullDto create(Long userId, NewEventDto dto) {
-        if (!Boolean.TRUE.equals(userClient.existsById(userId))) {
+        if (!Boolean.TRUE.equals(userClient.userExists(userId))) {
             throw new NotFoundException("User not found");
         }
         if (dto.getEventDate() != null && dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
@@ -113,7 +114,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventShortDto> getUserEvents(Long userId, int from, int size) {
-        if (!Boolean.TRUE.equals(userClient.existsById(userId))) {
+        if (!Boolean.TRUE.equals(userClient.userExists(userId))) {
             throw new NotFoundException("User not found");
         }
         Pageable pageable = PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "id"));
@@ -124,11 +125,14 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<ParticipationRequestDto> getEventParticipants(Long userId, Long eventId) {
-        Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found"));
+
         if (!event.getInitiatorId().equals(userId)) {
             throw new ConflictException("User is not initiator");
         }
-        return requestClient.getEventRequests(eventId);
+
+        return requestClient.getRequestsByEventId(eventId);
     }
 
     @Override
@@ -157,8 +161,8 @@ public class EventServiceImpl implements EventService {
 
         safeAddHit(requestUri, ip);
 
-        if (rangeStart == null && rangeEnd == null) rangeStart = LocalDateTime.now();
-        if (rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
+        if (rangeStart != null && rangeEnd != null &&
+            rangeStart.isAfter(rangeEnd)) {
             throw new IllegalArgumentException("End before start");
         }
 
@@ -169,40 +173,23 @@ public class EventServiceImpl implements EventService {
                 .and(text == null || text.isBlank() ? null : textLike(text));
 
         Pageable pageable = PageRequest.of(from / size, size, Sort.by("eventDate"));
-        Page<Event> page = eventRepository.findAll(spec, pageable);
 
-        Comparator<EventShortDto> comparator;
-        if ("VIEWS".equalsIgnoreCase(sort)) {
-            comparator = Comparator.comparing(EventShortDto::getViews,
-                    Comparator.nullsLast(Comparator.reverseOrder()));
-        } else if ("RATING_DESC".equalsIgnoreCase(sort)) {
-            comparator = Comparator.comparing(dto -> dto.getRating() != null ? dto.getRating().getScore() : 0,
-                    Comparator.reverseOrder());
-        } else if ("RATING_ASC".equalsIgnoreCase(sort)) {
-            comparator = Comparator.comparing(dto -> dto.getRating() != null ? dto.getRating().getScore() : 0);
-        } else {
-            comparator = Comparator.comparing(EventShortDto::getEventDate, Comparator.nullsLast(Comparator.naturalOrder()));
-        }
-
-        return page.getContent().stream()
+        return eventRepository.findAll(spec, pageable).stream()
                 .map(this::enrichShortDto)
-                .sorted(comparator)
                 .collect(Collectors.toList());
     }
 
     @Override
     public EventFullDto getPublicById(Long eventId, String requestUri, String ip) {
-        Event e = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
+        Event e = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found"));
+
         if (e.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Event must be published");
         }
-
-        safeAddHit("/events/" + eventId, ip);
+        safeAddHit(requestUri, ip);
 
         long views = fetchViews(eventId);
-        if (views == 0) {
-            views = 1;
-        }
 
         return enrichFullDtoWithViews(e, views);
     }
@@ -254,11 +241,44 @@ public class EventServiceImpl implements EventService {
         return enrichFullDto(eventRepository.save(e));
     }
 
+    @Override
+    public EventShortDto getEventShortInternal(Long eventId) {
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found with id: " + eventId));
+
+        Long confirmedRequests = requestClient.getConfirmedRequestsCount(eventId);
+
+        EventShortDto dto = eventMapper.toShort(event, confirmedRequests);
+
+        dto.setState(event.getState().name());
+        dto.setParticipantLimit(event.getParticipantLimit());
+        dto.setRequestModeration(event.getRequestModeration());
+
+        if (event.getInitiatorId() != null) {
+            dto.setInitiator(
+                    userClient.getUserShortById(event.getInitiatorId())
+            );
+        }
+
+        return dto;
+    }
+
+    @Override
+    public Boolean exists(Long eventId) {
+        return eventRepository.existsById(eventId);
+    }
+
+    @Override
+    public Boolean isPublished(Long eventId) {
+        return eventRepository.findById(eventId)
+                .map(e -> e.getState() == EventState.PUBLISHED)
+                .orElse(false);
+    }
+
     private void safeAddHit(String uri, String ip) {
-
         try {
-
-            statsClient.saveHit(
+            statsClient.hit(
                     buildHit(
                             "ewm-event-service",
                             uri,
@@ -266,9 +286,7 @@ public class EventServiceImpl implements EventService {
                             LocalDateTime.now()
                     )
             );
-
         } catch (Exception e) {
-
             log.warn("Could not save stats hit: {}", e.getMessage());
         }
     }
@@ -282,10 +300,12 @@ public class EventServiceImpl implements EventService {
         Long confirmed = circuitBreakerService.getConfirmedRequestsCount(e.getId());
 
         Category cat = categoryRepository.findById(e.getCategoryId()).orElse(null);
-        CategoryDto catDto = cat != null ? new CategoryDto(cat.getId(), cat.getName()) : null;
+
+        CategoryDto catDto = (cat != null)
+                ? new CategoryDto(cat.getId(), cat.getName())
+                : null;
 
         UserShortDto userDto = circuitBreakerService.getUserShortById(e.getInitiatorId());
-
         RatingDto rating = circuitBreakerService.getEventRating(e.getId());
 
         return EventMapper.toFull(e, catDto, userDto, views, confirmed, rating);
@@ -296,38 +316,35 @@ public class EventServiceImpl implements EventService {
         Long confirmed = circuitBreakerService.getConfirmedRequestsCount(e.getId());
 
         Category cat = categoryRepository.findById(e.getCategoryId()).orElse(null);
-        CategoryDto catDto = cat != null ? new CategoryDto(cat.getId(), cat.getName()) : null;
+
+        CategoryDto catDto = (cat != null)
+                ? new CategoryDto(cat.getId(), cat.getName())
+                : null;
 
         UserShortDto userDto = circuitBreakerService.getUserShortById(e.getInitiatorId());
-
         RatingDto rating = circuitBreakerService.getEventRating(e.getId());
 
         return EventMapper.toShort(e, catDto, userDto, views, confirmed, rating);
     }
 
     private long fetchViews(Long eventId) {
-
         try {
-            DateTimeFormatter formatter =
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String uri = "/events/" + eventId;
 
             List<ViewStatsDto> stats = statsClient.getStats(
-                    LocalDateTime.now()
-                            .minusYears(100)
-                            .format(formatter),
-
-                    LocalDateTime.now()
-                            .plusSeconds(1)
-                            .format(formatter),
-
-                    new String[]{"/events/" + eventId},
-
+                    LocalDateTime.now().minusYears(100),
+                    LocalDateTime.now().plusSeconds(1),
+                    List.of(uri),
                     true
             );
-            return stats.isEmpty()
-                    ? 0
-                    : stats.get(0).getHits();
+
+            return stats.stream()
+                    .filter(s -> uri.equals(s.getUri()))
+                    .mapToLong(ViewStatsDto::getHits)
+                    .sum();
+
         } catch (Exception e) {
+            log.warn("Failed to fetch stats: {}", e.getMessage());
             return 0;
         }
     }
@@ -341,7 +358,6 @@ public class EventServiceImpl implements EventService {
         return hit;
     }
 
-    // Specification methods
     private Specification<Event> published() {
         return (r, q, cb) -> cb.equal(r.get("state"), EventState.PUBLISHED);
     }

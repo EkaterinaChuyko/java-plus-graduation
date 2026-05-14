@@ -10,4 +10,5 @@ public interface RatingClient {
 
     @GetMapping("/internal/ratings/event/{eventId}")
     RatingDto getEventRating(@PathVariable("eventId") Long eventId);
+
 }

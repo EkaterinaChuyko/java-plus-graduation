@@ -1,56 +1,32 @@
 package ru.practicum.controller.internal;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.api.EventInternalApi;
 import ru.practicum.dto.event.EventShortDto;
-import ru.practicum.dto.user.UserShortDto;
-import ru.practicum.exception.NotFoundException;
-import ru.practicum.mapper.EventMapper;
-import ru.practicum.model.Event;
-import ru.practicum.repository.EventRepository;
-import ru.practicum.service.event.EventCircuitBreakerService;
+import ru.practicum.service.event.EventService;
 
 @RestController
+@RequestMapping("/internal/events")
 @RequiredArgsConstructor
-@Slf4j
-public class EventInternalController implements EventInternalApi {
+public class EventInternalController {
 
-    private final EventRepository eventRepository;
-    private final EventMapper eventMapper;
-    private final EventCircuitBreakerService circuitBreakerService;
+    private final EventService eventService;
 
-    @Override
-    public Boolean eventExists(Long eventId) {
-        log.debug("Internal API: check if event {} exists", eventId);
-        return eventRepository.existsById(eventId);
+    @GetMapping("/{eventId}")
+    public EventShortDto getEventById(@PathVariable Long eventId) {
+        return eventService.getEventShortInternal(eventId);
     }
 
-    @Override
-    public EventShortDto getEventById(Long eventId) {
-        log.debug("Internal API: get event by id {}", eventId);
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event not found with id: " + eventId));
-
-        EventShortDto dto = eventMapper.toShort(event, 0L);
-        dto.setState(event.getState().name());
-        dto.setParticipantLimit(event.getParticipantLimit());
-        dto.setRequestModeration(event.getRequestModeration());
-
-        if (event.getInitiatorId() != null) {
-            UserShortDto initiator = circuitBreakerService.getUserShortById(event.getInitiatorId());
-            dto.setInitiator(initiator);
-        }
-
-        return dto;
+    @GetMapping("/{eventId}/exists")
+    public Boolean eventExists(@PathVariable Long eventId) {
+        return eventService.exists(eventId);
     }
 
-    @Override
-    public Boolean isEventPublished(Long eventId) {
-        log.debug("Internal API: check if event {} is published", eventId);
-        return eventRepository.findById(eventId)
-                .map(event -> event.getState().name().equals("PUBLISHED"))
-                .orElse(false);
+    @GetMapping("/{eventId}/is-published")
+    public Boolean isEventPublished(@PathVariable Long eventId) {
+        return eventService.isPublished(eventId);
     }
 }

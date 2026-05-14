@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.exception.ConditionsException;
 import ru.practicum.service.event.EventService;
 
 import java.time.LocalDateTime;
@@ -34,6 +35,11 @@ public class PublicEventsController {
             @RequestParam(defaultValue = "10") @Min(1) Integer size,
             HttpServletRequest req
     ) {
+
+        if (rangeStart != null && rangeEnd != null &&
+            rangeStart.isAfter(rangeEnd)) {
+            throw new ConditionsException("rangeStart must be before rangeEnd");
+        }
         return service.searchPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size, req.getRequestURI(), req.getRemoteAddr());
     }
 

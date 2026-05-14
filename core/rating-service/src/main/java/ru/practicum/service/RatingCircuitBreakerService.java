@@ -22,7 +22,7 @@ public class RatingCircuitBreakerService {
     @CircuitBreaker(name = "user-service", fallbackMethod = "userExistsFallback")
     public Boolean userExists(Long userId) {
         log.debug("Calling user-service for user exists: {}", userId);
-        return userClient.existsById(userId);
+        return userClient.userExists(userId);
     }
 
     private Boolean userExistsFallback(Long userId, Throwable t) {
@@ -33,7 +33,7 @@ public class RatingCircuitBreakerService {
     @CircuitBreaker(name = "event-service", fallbackMethod = "getEventShortFallback")
     public EventShortDto getEventById(Long eventId) {
         log.debug("Calling event-service for event: {}", eventId);
-        return eventClient.getEventShort(eventId);
+        return eventClient.getEventById(eventId);
     }
 
     private EventShortDto getEventByIdFallback(Long eventId, Throwable t) {

@@ -2,6 +2,7 @@ package ru.practicum.service.category;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.category.CategoryDto;
@@ -28,6 +29,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
+
+        if (categoryRepository.existsByName(newCategoryDto.getName())) {
+            throw new ConflictException("Category already exists");
+        }
+
         Category category = categoryMapper.toEntity(newCategoryDto);
         return categoryMapper.toDto(categoryRepository.save(category));
     }
@@ -35,9 +41,19 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
+
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-        category.setName(categoryDto.getName());
+
+        String newName = categoryDto.getName();
+
+        if (categoryRepository.existsByName(newName)
+            && !category.getName().equals(newName)) {
+            throw new ConflictException("Category already exists");
+        }
+
+        category.setName(newName);
+
         return categoryMapper.toDto(categoryRepository.save(category));
     }
 
@@ -57,7 +73,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryDto> getAllCategories(int from, int size) {
-        return categoryRepository.findAll(PageRequest.of(from / size, size)).stream()
+
+        int page = from / size;
+
+        return categoryRepository.findAll(
+                        PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"))
+                )
+                .stream()
                 .map(categoryMapper::toDto)
                 .collect(Collectors.toList());
     }
