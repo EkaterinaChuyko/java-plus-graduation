@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.dto.user.UserShortDto;
 import ru.practicum.exception.AlreadyExistsException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
@@ -16,6 +17,7 @@ import ru.practicum.dto.user.NewUserRequest;
 import ru.practicum.dto.user.UserDto;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,9 +86,20 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsById(userId);
     }
 
+    @Override
+    public List<UserShortDto> getUsersByIds(Set<Long> ids) {
+
+        return userRepository.findAllById(ids).stream()
+                .map(UserMapper::toShortDto)
+                .collect(Collectors.toList());
+    }
+
     private void checkEmailUniqueness(String email) {
+
         if (userRepository.existsByEmail(email)) {
-            throw new ConflictException("Email '" + email + "' already exists");
+            throw new ConflictException(
+                    "Email '" + email + "' already exists"
+            );
         }
     }
 

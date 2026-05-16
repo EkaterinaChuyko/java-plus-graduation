@@ -24,6 +24,7 @@ import ru.practicum.repository.EventRepository;
 import ru.practicum.request.UpdateCompilationRequest;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -135,18 +136,13 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     private Map<Long, UserShortDto> fetchUsers(Set<Long> userIds) {
-        Map<Long, UserShortDto> usersMap = new HashMap<>();
 
-        for (Long userId : userIds) {
-            try {
-                UserShortDto user = userClient.getUserShortById(userId);
-                if (user != null) {
-                    usersMap.put(userId, user);
-                }
-            } catch (Exception e) {
-                log.warn("Could not fetch user with id {}: {}", userId, e.getMessage());
-            }
-        }
-        return usersMap;
+        List<UserShortDto> users = userClient.getUsersByIds(userIds);
+
+        return users.stream()
+                .collect(Collectors.toMap(
+                        UserShortDto::getId,
+                        Function.identity()
+                ));
     }
 }

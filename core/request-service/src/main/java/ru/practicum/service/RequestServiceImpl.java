@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.client.EventClient;
+import ru.practicum.client.UserClient;
 import ru.practicum.dto.enums.Status;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.exception.ConflictException;
@@ -27,6 +29,8 @@ public class RequestServiceImpl implements RequestService {
 
     private final RequestRepository requestRepository;
     private final RequestCircuitBreakerService circuitBreakerService;
+    private final UserClient userClient;
+    private final EventClient eventClient;
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
@@ -42,13 +46,14 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto addRequest(Long userId, Long eventId) {
-        if (!Boolean.TRUE.equals(circuitBreakerService.userExists(userId))) {
+
+        if (!Boolean.TRUE.equals(userClient.userExists(userId))) {
             throw new NotFoundException("User not found");
         }
 
         EventShortDto event;
         try {
-            event = circuitBreakerService.getEventById(eventId);
+            event = eventClient.getEventById(eventId);
         } catch (Exception e) {
             log.error("Failed to fetch event {}: {}", eventId, e.getMessage());
             throw new NotFoundException("Event not found");
@@ -87,6 +92,7 @@ public class RequestServiceImpl implements RequestService {
                 .build();
 
         log.info("Creating request: user {} for event {}, status {}", userId, eventId, status);
+
         return RequestMapper.toDto(requestRepository.save(req));
     }
 
