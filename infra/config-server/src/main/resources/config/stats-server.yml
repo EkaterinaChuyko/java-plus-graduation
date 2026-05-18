@@ -1,31 +1,39 @@
 server:
   port: 0
+  error:
+    include-message: always
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:6542/stats
-    username: user
-    password: pass
+    url: jdbc:postgresql://localhost:5433/ewm-stats
+    username: stat
+    password: stat
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: false
+
   sql:
     init:
       mode: always
-      platform: postgresql
-      schema-locations: classpath:schema.sql
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
+      schema-locations: classpath:/schema.sql
+      continue-on-error: true
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    ru.practicum: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+    com.netflix: INFO

@@ -1,0 +1,39 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: rating-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5436/rating
+    username: rating
+    password: rating
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 10
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    ru.practicum: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN

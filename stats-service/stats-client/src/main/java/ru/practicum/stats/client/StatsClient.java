@@ -1,5 +1,6 @@
 package ru.practicum.stats.client;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
@@ -8,13 +9,17 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import ru.practicum.stats.dto.HitDto;
-import ru.practicum.stats.dto.ViewStatsDto;
+import ru.practicum.dto.stats.HitDto;
+import ru.practicum.dto.stats.ViewStatsDto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
+
+@Slf4j
 @Component
 public class StatsClient {
 
@@ -52,12 +57,21 @@ public class StatsClient {
 
     private String getBaseUrl() {
         ServiceInstance instance = retryTemplate.execute(context -> getInstance());
-        return "http://" + instance.getHost() + ":" + instance.getPort();
+        String url = "http://" + instance.getHost() + ":" + instance.getPort();
+        log.info("Resolved stats-server URL: {}", url);
+        return url;
     }
 
     public void hit(HitDto hitDto) {
         String baseUrl = getBaseUrl();
-        restTemplate.postForEntity(baseUrl + "/hit", hitDto, Void.class);
+        log.info("Sending hit to stats-server at {}: {}", baseUrl, hitDto);
+        try {
+            restTemplate.postForEntity(baseUrl + "/hit", hitDto, Void.class);
+            log.info("Hit sent successfully");
+        } catch (Exception e) {
+            log.error("Failed to send hit to stats-server: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end,
