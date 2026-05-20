@@ -38,7 +38,7 @@ public class EventSimilarityConsumer {
             consumer.subscribe(List.of(actionsTopic));
             log.info("Analyzer event similarity consumer subscribed to the topic: {}", actionsTopic);
 
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 ConsumerRecords<String, EventSimilarityAvro> records =
                         consumer.poll(Duration.ofMillis(kafkaConfig.getEventConsumer().getPollDurationMs()));
 

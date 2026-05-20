@@ -42,7 +42,7 @@ public class UserActionConsumer implements Runnable {
             consumer.subscribe(List.of(actionsTopic));
             log.info("Analyzer user action consumer subscribed to the topic: {}", actionsTopic);
 
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 ConsumerRecords<Long, UserActionAvro> records =
                         consumer.poll(Duration.ofMillis(kafkaConfig.getUserConsumer().getPollDurationMs()));
 
