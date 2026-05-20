@@ -1,25 +1,42 @@
 server:
   port: 0
 
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    consumer:
+      group-id: aggregator.group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
 logging:
   level:
     root: INFO
     ru.practicum.stats.aggregator: DEBUG
+    org.springframework.kafka: INFO
+    org.apache.kafka.clients: INFO
 
 kafka:
-  server: 'localhost:9092'
-  schema-registry-url: 'http://localhost:8081'
+  server: localhost:9092
+  schema-registry-url: http://localhost:8081
 
   topics:
-    users: 'stats.user-actions.v1'
-    events: 'stats.events-similarity.v1'
+    users: stats.user-actions.v1
+    events: stats.events-similarity.v1
 
   consumer:
-    client-id: 'aggregator'
-    group-id: 'aggregator.group'
+    client-id: aggregator
+    group-id: aggregator.group
     poll-duration-ms: 5000
 
 action-weights:
   view: 0.4
   register: 0.8
-  like: 1
+  like: 1.0
