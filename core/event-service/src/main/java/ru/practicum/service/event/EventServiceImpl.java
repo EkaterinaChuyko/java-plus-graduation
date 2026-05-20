@@ -2,7 +2,6 @@ package ru.practicum.service.event;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -13,9 +12,7 @@ import ru.practicum.client.RatingClient;
 import ru.practicum.client.RequestClient;
 import ru.practicum.client.UserClient;
 import ru.practicum.dto.category.CategoryDto;
-import ru.practicum.dto.enums.AdminStateAction;
 import ru.practicum.dto.enums.EventState;
-import ru.practicum.dto.enums.UserStateAction;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.dto.event.NewEventDto;
@@ -38,8 +35,6 @@ import ru.practicum.request.UpdateEventUserRequest;
 import ru.practicum.stats.client.StatsClient;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;

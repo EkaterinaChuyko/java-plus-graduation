@@ -1,4 +1,4 @@
-package ru.practicum.stats.client.config;
+package ru.practicum.stats.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -30,9 +30,10 @@
 		<kafka-clients.version>3.6.1</kafka-clients.version>
 		<springdoc-openapi-starter.version>2.6.0</springdoc-openapi-starter.version>
 
+		<!-- gRPC: ЕДИНАЯ ВЕРСИЯ -->
+		<grpc.version>1.62.2</grpc.version>
 		<grpc-spring-boot-starter.version>2.15.0.RELEASE</grpc-spring-boot-starter.version>
-		<grpc.version>1.58.0</grpc.version>
-		<protobuf.version>3.21.12</protobuf.version>
+		<protobuf.version>3.25.3</protobuf.version>
 
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 		<protobuf-plugin.version>2.4.0</protobuf-plugin.version>
@@ -65,9 +66,78 @@
 			</dependency>
 
 			<dependency>
+				<groupId>io.grpc</groupId>
+				<artifactId>grpc-bom</artifactId>
+				<version>${grpc.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot-starter.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-client-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot-starter.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-server-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot-starter.version}</version>
+			</dependency>
+
+			<dependency>
 				<groupId>ru.practicum</groupId>
 				<artifactId>api-client</artifactId>
 				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot-starter.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-client-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot-starter.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-server-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot-starter.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>io.grpc</groupId>
+				<artifactId>grpc-stub</artifactId>
+				<version>${grpc.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>io.grpc</groupId>
+				<artifactId>grpc-protobuf</artifactId>
+				<version>${grpc.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4j.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.google.protobuf</groupId>
+				<artifactId>protobuf-java</artifactId>
+				<version>${protobuf.version}</version>
+				<scope>compile</scope>
 			</dependency>
 
 			<dependency>

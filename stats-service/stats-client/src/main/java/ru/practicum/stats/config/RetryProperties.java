@@ -1,4 +1,4 @@
-package ru.practicum.stats.client.config;
+package ru.practicum.stats.config;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
