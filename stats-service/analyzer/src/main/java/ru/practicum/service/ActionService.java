@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.model.ActionType;
 import ru.practicum.model.UserAction;
 import ru.practicum.repository.UserActionRepository;
 import ru.practicum.stats.avro.ActionTypeAvro;
@@ -38,6 +39,7 @@ public class ActionService {
             UserAction action = UserAction.builder()
                     .userId(userId)
                     .eventId(eventId)
+                    .action(ActionType.valueOf(avroAction.getActionType().name()))
                     .rating(rating)
                     .created(avroAction.getTimestamp())
                     .build();
@@ -74,6 +76,7 @@ public class ActionService {
     }
 
     private double getRatingByActionType(ActionTypeAvro actionType) {
+
         return switch (actionType) {
             case ACTION_VIEW -> 0.4;
             case ACTION_REGISTER -> 0.8;

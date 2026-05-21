@@ -1,6 +1,5 @@
 package ru.practicum.model;
 
-import com.netflix.appinfo.InstanceInfo;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,8 +27,8 @@ public class UserAction {
     private Long eventId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "action")
-    private InstanceInfo.ActionType action;
+    @Column(name = "action", nullable = false)
+    private ActionType action;
 
     @Column(name = "rating")
     private Double rating;
