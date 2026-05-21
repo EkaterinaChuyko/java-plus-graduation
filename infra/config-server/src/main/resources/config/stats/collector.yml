@@ -11,10 +11,7 @@ spring:
     name: collector
 
   kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.VoidSerializer
-      value-serializer: ru.practicum.ewm.serializer.GeneralAvroSerializer
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 logging:
   level:
@@ -24,3 +21,10 @@ logging:
 topics:
   user-action: stats.user-actions.v1
   event-similarity: stats.events-similarity.v1
+
+kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: ru.practicum.ewm.serializer.GeneralAvroSerializer
