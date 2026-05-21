@@ -37,8 +37,8 @@ kafka:
   consumer:
     key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
-    user-actions-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    events-similarity-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    user-actions-deserializer: serialization.UserActionDeserializer
+    events-similarity-deserializer: serialization.EventSimilarityDeserializer
 
     actions-group-id: analyzer.actions.group
     similarity-group-id: analyzer.similarity.group
