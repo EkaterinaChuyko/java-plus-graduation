@@ -1,6 +1,14 @@
-stats:
-  client:
-    retry:
-      max-attempts: 3
-      fixed:
-        delay: 3000
+server:
+  port: 0
+
+spring:
+  application:
+    name: stats-client
+
+app:
+  stats:
+    url: http://stats-server:9090
+
+retry:
+  max-attempts: 3
+  delay: 3000
