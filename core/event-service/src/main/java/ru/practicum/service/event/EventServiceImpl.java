@@ -21,6 +21,7 @@ import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.dto.stats.HitDto;
 import ru.practicum.dto.stats.ViewStatsDto;
 import ru.practicum.dto.user.UserShortDto;
+import ru.practicum.exception.ConditionsException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.EventMapper;
@@ -158,14 +159,24 @@ public class EventServiceImpl implements EventService {
 
         if (rangeStart != null && rangeEnd != null &&
             rangeStart.isAfter(rangeEnd)) {
-            throw new IllegalArgumentException("End before start");
+            throw new ConditionsException("rangeStart must be before rangeEnd");
         }
+
+        List<Long> validCategories = categories == null
+                ? null
+                : categories.stream()
+                .filter(id -> id != null && id > 0)
+                .toList();
 
         Specification<Event> spec = Specification.where(published())
                 .and(betweenDates(rangeStart, rangeEnd))
-                .and(categories == null || categories.isEmpty() ? null : inCategories(categories))
+                .and(validCategories == null || validCategories.isEmpty()
+                        ? null
+                        : inCategories(validCategories))
                 .and(paid == null ? null : paidEq(paid))
-                .and(text == null || text.isBlank() ? null : textLike(text));
+                .and(text == null || text.isBlank()
+                        ? null
+                        : textLike(text));
 
         Pageable pageable = PageRequest.of(from / size, size, Sort.by("eventDate"));
 

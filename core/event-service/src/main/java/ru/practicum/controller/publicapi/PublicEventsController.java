@@ -27,12 +27,8 @@ public class PublicEventsController {
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) Boolean paid,
-            @RequestParam(required = false)
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-            LocalDateTime rangeStart,
-            @RequestParam(required = false)
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-            LocalDateTime rangeEnd,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(defaultValue = "EVENT_DATE") String sort,
             @RequestParam(defaultValue = "0") @Min(0) Integer from,
@@ -40,24 +36,11 @@ public class PublicEventsController {
             HttpServletRequest req
     ) {
 
-        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
-            rangeStart = null;
-            rangeEnd = null;
+        if (rangeStart != null && rangeEnd != null &&
+            rangeStart.isAfter(rangeEnd)) {
+            throw new ConditionsException("rangeStart must be before rangeEnd");
         }
-
-        return service.searchPublic(
-                text,
-                categories,
-                paid,
-                rangeStart,
-                rangeEnd,
-                onlyAvailable,
-                sort,
-                from,
-                size,
-                req.getRequestURI(),
-                req.getRemoteAddr()
-        );
+        return service.searchPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size, req.getRequestURI(), req.getRemoteAddr());
     }
 
     @GetMapping("/{id}")
