@@ -8,9 +8,6 @@ import lombok.ToString;
 
 import java.time.Instant;
 
-@Getter
-@Setter
-@ToString
 @Builder
 public class UserAction {
 
@@ -23,5 +20,6 @@ public class UserAction {
     @NotNull
     private ActionType actionType;
 
+    @Builder.Default
     private Instant timestamp = Instant.now();
 }
