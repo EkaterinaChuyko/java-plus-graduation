@@ -37,13 +37,15 @@ public class ActionService {
 
         if (oldActionOpt.isEmpty()) {
 
+            Instant ts = avroAction.getTimestamp();
+
             UserAction actionEntity = UserAction.builder()
                     .userId(userId)
                     .eventId(eventId)
                     .action(action)
                     .rating(rating)
-                    .timestamp(LocalDateTime.ofInstant(avroAction.getTimestamp(), ZoneOffset.UTC))
-                    .created(Instant.now())
+                    .timestamp(LocalDateTime.ofInstant(ts, ZoneOffset.UTC))
+                    .created(ts)
                     .build();
 
             repository.save(actionEntity);
