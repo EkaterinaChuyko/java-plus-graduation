@@ -13,6 +13,8 @@ import ru.practicum.stats.avro.ActionTypeAvro;
 import ru.practicum.stats.avro.UserActionAvro;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 @Service
@@ -23,54 +25,43 @@ public class ActionService {
 
     @Transactional
     public void saveOrUpdate(UserActionAvro avroAction) {
+
         long userId = avroAction.getUserId();
         long eventId = avroAction.getEventId();
-
-        log.debug("Processing interaction: userId={}, eventId={}, actionType={}",
-                userId, eventId, avroAction.getActionType()
-        );
 
         Optional<UserAction> oldActionOpt =
                 repository.findByUserIdAndEventId(userId, eventId);
 
-        if (oldActionOpt.isEmpty()) {
-            double rating = getRatingByActionType(avroAction.getActionType());
+        ActionType action = mapAction(avroAction.getActionType());
+        double rating = getRatingByActionType(avroAction.getActionType());
 
-            UserAction action = UserAction.builder()
+        if (oldActionOpt.isEmpty()) {
+
+            UserAction actionEntity = UserAction.builder()
                     .userId(userId)
                     .eventId(eventId)
-                    .action(ActionType.valueOf(avroAction.getActionType().name()))
+                    .action(action)
                     .rating(rating)
-                    .created(avroAction.getTimestamp())
+                    .timestamp(LocalDateTime.ofInstant(avroAction.getTimestamp(), ZoneOffset.UTC))
+                    .created(Instant.now())
                     .build();
 
-            repository.save(action);
+            repository.save(actionEntity);
 
-            log.info("Saved new interaction: userId={}, eventId={}, rating={}",
-                    userId, eventId, rating
-            );
         } else {
+
             UserAction oldAction = oldActionOpt.get();
-            double oldRating = oldAction.getRating();
-            double newRating = getRatingByActionType(avroAction.getActionType());
 
-            if (newRating >= oldRating) {
-                oldAction.setRating(newRating);
+            if (rating >= oldAction.getRating()) {
+                oldAction.setRating(rating);
+                oldAction.setAction(action);
 
-                Instant oldTimestamp = oldAction.getCreated();
-                Instant newTimestamp = avroAction.getTimestamp();
-
-                if (oldTimestamp == null || oldTimestamp.isBefore(newTimestamp)) {
-                    oldAction.setCreated(newTimestamp);
+                Instant newTs = avroAction.getTimestamp();
+                if (oldAction.getCreated() == null || oldAction.getCreated().isBefore(newTs)) {
+                    oldAction.setCreated(newTs);
                 }
 
                 repository.save(oldAction);
-
-                log.info("Updated interaction: userId={}, eventId={}, oldRating={}, newRating={}",
-                        userId, eventId, oldRating, newRating
-                );
-            } else {
-                log.info("Update skipped: new rating is lower or equal to existing rating");
             }
         }
     }
@@ -126,5 +117,13 @@ public class ActionService {
         log.info("Found {} interactions", actions.size());
 
         return actions;
+    }
+
+    private ActionType mapAction(ActionTypeAvro avro) {
+        return switch (avro) {
+            case ACTION_VIEW -> ActionType.ACTION_VIEW;
+            case ACTION_REGISTER -> ActionType.ACTION_REGISTER;
+            case ACTION_LIKE -> ActionType.ACTION_LIKE;
+        };
     }
 }
