@@ -27,4 +27,4 @@ kafka:
 
   producer:
     key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    value-serializer: ru.practicum.ewm.serializer.GeneralAvroSerializer
+    value-serializer: serialization.GeneralAvroSerializer
