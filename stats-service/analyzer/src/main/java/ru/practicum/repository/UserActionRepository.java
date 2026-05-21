@@ -1,26 +1,21 @@
 package ru.practicum.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import ru.practicum.model.UserAction;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserActionRepository extends JpaRepository<UserAction, Long> {
+    Optional<UserAction> findByUserIdAndEventId(Long userId, Long eventId);
 
-    List<UserAction> findByEventIdIn(List<Long> ids);
+    List<UserAction> findAllByEventIdIn(Set<Long> eventIds);
 
-    Optional<UserAction> findByUserIdAndEventId(long userId, long eventId);
+    List<Long> findDistinctEventIdByUserIdOrderByCreatedDesc(
+            Long userId,
+            Pageable pageable);
 
-    List<UserAction> findByUserId(long userId);
-
-    @Query("""
-           SELECT ua.eventId, ua.action
-           FROM UserAction ua
-           WHERE ua.userId = :userId
-             AND ua.eventId IN :eventIds
-           """)
-    List<Object[]> getUserScoresForEvents(long userId, Collection<Long> eventIds);
+    List<Long> findDistinctEventIdByUserIdAndEventIdIn(Long userId, Set<Long> eventIds);
 }

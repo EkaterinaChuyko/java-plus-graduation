@@ -1,30 +1,33 @@
 package ru.practicum.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
-@IdClass(EventSimilarityId.class)
 @Table(name = "event_similarity")
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class EventSimilarity {
-    @Id
-    @Column(name = "eventA")
-    private long eventA;
 
     @Id
-    @Column(name = "eventB")
-    private long eventB;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "event_a")
+    private Long eventA;
+
+    @Column(name = "event_b")
+    private Long eventB;
 
     @Column(name = "score")
-    private double score;
+    private Double score;
 
-    @Column(name = "timestamp")
-    private LocalDateTime timestamp;
+    @Column(name = "created")
+    private Instant created;
 }

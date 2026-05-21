@@ -1,17 +1,25 @@
 spring:
   application:
     name: aggregator
+
   config:
     import: "optional:configserver:"
+
   cloud:
     config:
       label: stats
+
       discovery:
         enabled: true
         serviceId: config-server
+
+      uri: ""
+
       request-connect-timeout: 30000
       request-read-timeout: 30000
+
       fail-fast: true
+
       retry:
         useRandomPolicy: true
         max-attempts: 5
@@ -22,6 +30,7 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
   instance:
     preferIpAddress: true
     hostname: ${spring.application.name:localhost}
@@ -32,3 +41,9 @@ management:
     web:
       exposure:
         include: health
+
+logging:
+  level:
+    org.springframework.cloud.config.client: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG
+    com.netflix.discovery: DEBUG

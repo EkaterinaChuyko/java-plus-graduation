@@ -2,6 +2,11 @@ server:
   port: 0
 
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
   kafka:
     bootstrap-servers: localhost:9092
 
@@ -13,7 +18,6 @@ spring:
       group-id: aggregator.group
       auto-offset-reset: earliest
       enable-auto-commit: false
-
       key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
 
@@ -29,8 +33,13 @@ logging:
 app:
   kafka:
     topics:
-      users: stats.user-actions.v1
-      events: stats.events-similarity.v1
+      user-actions: stats.user-actions.v1
+      events-similarity: stats.events-similarity.v1
+
+# 🔥 ДОБАВЛЕНО: плоский слой для @Value("${topics.user-actions}")
+topics:
+  user-actions: ${app.kafka.topics.user-actions}
+  events-similarity: ${app.kafka.topics.events-similarity}
 
 action-weights:
   view: 0.4

@@ -4,13 +4,26 @@ server:
 grpc:
   server:
     port: 0
+    in-process-enabled: false
+
+spring:
+  application:
+    name: collector
+
+  kafka:
+    bootstrap-servers: localhost:9092
 
 logging:
   level:
     root: INFO
     ru.practicum.stats.collector: DEBUG
 
+topics:
+  user-action: stats.user-actions.v1
+
 kafka:
-  server: 'localhost:9092'
-  topics:
-    users: 'stats.user-actions.v1'
+  bootstrap-servers: localhost:9092
+
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

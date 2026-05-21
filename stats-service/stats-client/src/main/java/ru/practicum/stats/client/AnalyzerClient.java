@@ -3,99 +3,92 @@ package ru.practicum.stats.client;
 import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import ru.practicum.stats.grpc.dashboard.RecommendationsControllerGrpc;
 import ru.practicum.stats.grpc.recommendation.InteractionsCountRequestProto;
-import ru.practicum.stats.grpc.recommendation.RecommendedEventProto;
-import ru.practicum.stats.grpc.recommendation.SimilarEventsRequestProto;
 import ru.practicum.stats.grpc.recommendation.UserPredictionsRequestProto;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 @Slf4j
 @Component
 public class AnalyzerClient {
 
     @GrpcClient("analyzer")
-    private RecommendationsControllerGrpc.RecommendationsControllerBlockingStub client;
+    private RecommendationsControllerGrpc.RecommendationsControllerBlockingStub recommendationsStub;
 
-    public Stream<RecommendedEventProto> getInteractionsCount(List<Long> eventIds) {
-        log.debug("Get interactions count for events: {}", eventIds);
-
-        InteractionsCountRequestProto request = InteractionsCountRequestProto.newBuilder()
-                .addAllEventId(eventIds)
-                .build();
-
-        log.debug("Request: {}", request);
+    @Retryable(
+            retryFor = {StatusRuntimeException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 3000)
+    )
+    public Map<Long, Double> getEventRatings(List<Long> eventIds) {
+        if (eventIds == null || eventIds.isEmpty()) {
+            return Map.of();
+        }
 
         try {
-            Iterator<RecommendedEventProto> iterator = client.getInteractionsCount(request);
+            InteractionsCountRequestProto request = InteractionsCountRequestProto.newBuilder()
+                    .addAllEventId(eventIds)
+                    .build();
 
-            List<RecommendedEventProto> result = new ArrayList<>();
-            iterator.forEachRemaining(result::add);
+            Map<Long, Double> ratings = new HashMap<>();
+            recommendationsStub.getInteractionsCount(request).forEachRemaining(response -> {
+                ratings.put(response.getEventId(), response.getScore());
+            });
 
-            log.debug("Successfully got interactions count: {} items", result.size());
+            log.info("Received ratings for {} events", ratings.size());
+            return ratings;
 
-            return result.stream();
+        } catch (StatusRuntimeException e) {
+            log.error("Failed to get event ratings. Status: {}, message: {}",
+                    e.getStatus(), e.getMessage(), e);
+            throw e;
 
-        } catch (StatusRuntimeException exception) {
-            log.error("gRPC getInteractionsCount failed", exception);
-            throw new RuntimeException("gRPC getInteractionsCount failed", exception);
+        } catch (Exception e) {
+            log.error("Failed to get event ratings. Exception: {}, message: {}",
+                    e.getClass().getName(), e.getMessage(), e);
+            throw new RuntimeException("Error while fetching event ratings", e);
         }
     }
 
-    public Stream<RecommendedEventProto> getSimilarEvents(long eventId, long userId, int maxResults) {
-        log.debug("Get similar events for eventId={}, userId={}, maxResults={}",
-                eventId, userId, maxResults);
-
-        SimilarEventsRequestProto request = SimilarEventsRequestProto.newBuilder()
-                .setEventId(eventId)
-                .setUserId(userId)
-                .setMaxResults(maxResults)
-                .build();
-
-        log.debug("Request: {}", request);
-
-        try {
-            Iterator<RecommendedEventProto> iterator = client.getSimilarEvents(request);
-
-            List<RecommendedEventProto> result = new ArrayList<>();
-            iterator.forEachRemaining(result::add);
-
-            log.debug("Successfully got similar events: {} items", result.size());
-
-            return result.stream();
-
-        } catch (StatusRuntimeException exception) {
-            log.error("gRPC getSimilarEvents failed", exception);
-            throw new RuntimeException("gRPC getSimilarEvents failed", exception);
+    @Retryable(
+            retryFor = {StatusRuntimeException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 3000)
+    )
+    public Map<Long, Double> getRecommendationsForUser(Long userId, Integer maxResults) {
+        if (userId == null) {
+            return Map.of();
         }
-    }
-
-    public Stream<RecommendedEventProto> getRecommendationsForUser(long userId, int maxResults) {
-        log.debug("Get recommendations for userId={}, maxResults={}", userId, maxResults);
-
-        UserPredictionsRequestProto request = UserPredictionsRequestProto.newBuilder()
-                .setUserId(userId)
-                .setMaxResults(maxResults)
-                .build();
-
-        log.debug("Request: {}", request);
 
         try {
-            Iterator<RecommendedEventProto> iterator = client.getRecommendationsForUser(request);
+            UserPredictionsRequestProto request = UserPredictionsRequestProto.newBuilder()
+                    .setUserId(userId)
+                    .setMaxResults(maxResults != null ? maxResults : 10)
+                    .build();
 
-            List<RecommendedEventProto> result = new ArrayList<>();
-            iterator.forEachRemaining(result::add);
+            Map<Long, Double> recommendations = new HashMap<>();
+            recommendationsStub.getRecommendationsForUser(request).forEachRemaining(response -> {
+                recommendations.put(response.getEventId(), response.getScore());
+            });
 
-            log.debug("Successfully got recommendations: {} items", result.size());
+            log.info("Received recommendations for user {}: {} events",
+                    userId, recommendations.size());
 
-            return result.stream();
+            return recommendations;
 
-        } catch (StatusRuntimeException exception) {
-            log.error("gRPC getRecommendationsForUser failed", exception);
-            throw new RuntimeException("gRPC getRecommendationsForUser failed", exception);
+        } catch (StatusRuntimeException e) {
+            log.error("Failed to get recommendations for user {}. Status: {}, message: {}",
+                    userId, e.getStatus(), e.getMessage(), e);
+            throw e;
+
+        } catch (Exception e) {
+            log.error("Failed to get recommendations for user {}. Exception: {}, message: {}",
+                    userId, e.getClass().getName(), e.getMessage(), e);
+            throw new RuntimeException("Error while fetching user recommendations", e);
         }
     }
 }

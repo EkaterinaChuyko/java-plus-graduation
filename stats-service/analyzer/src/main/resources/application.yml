@@ -1,8 +1,10 @@
 spring:
   application:
     name: analyzer
+
   config:
     import: "optional:configserver:"
+
   cloud:
     config:
       label: stats
@@ -22,6 +24,7 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
   instance:
     preferIpAddress: true
     hostname: ${spring.application.name:localhost}

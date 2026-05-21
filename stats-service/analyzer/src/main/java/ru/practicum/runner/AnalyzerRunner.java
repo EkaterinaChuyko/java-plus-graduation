@@ -1,35 +1,25 @@
 package ru.practicum.runner;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import ru.practicum.service.EventSimilarityConsumer;
-import ru.practicum.service.UserActionConsumer;
+import ru.practicum.processor.ActionProcessor;
+import ru.practicum.processor.SimilarityProcessor;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AnalyzerRunner implements CommandLineRunner {
-
-    private final UserActionConsumer userActionConsumer;
-    private final EventSimilarityConsumer eventSimilarityConsumer;
+    private final ActionProcessor actionProcessor;
+    private final SimilarityProcessor similarityProcessor;
 
     @Override
-    public void run(String... args) {
+    public void run(String... args) throws Exception {
+        Thread actionThread = new Thread(actionProcessor);
+        actionThread.setName("UserActionProcessorThread");
+        actionThread.start();
 
-        Thread userActionsThread = new Thread(userActionConsumer);
-        userActionsThread.setName("UserActionConsumerThread");
-        userActionsThread.setDaemon(true);
-        userActionsThread.start();
-
-        Thread eventSimilarityThread =
-                new Thread(eventSimilarityConsumer::start);
-
-        eventSimilarityThread.setName("EventSimilarityConsumerThread");
-        eventSimilarityThread.setDaemon(true);
-        eventSimilarityThread.start();
-
-        log.info("Kafka consumers successfully started");
+        Thread similarityThread = new Thread(similarityProcessor);
+        similarityThread.setName("EventSimilarityProcessorThread");
+        similarityThread.start();
     }
 }

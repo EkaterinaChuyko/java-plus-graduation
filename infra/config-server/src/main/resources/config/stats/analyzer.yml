@@ -16,7 +16,6 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: none
-
     properties:
       hibernate:
         jdbc:
@@ -33,11 +32,20 @@ logging:
     ru.practicum.stats.analyzer: DEBUG
 
 kafka:
-  server: localhost:9092
+  bootstrap-servers: localhost:9092
+
+  consumer:
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    user-actions-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    events-similarity-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    actions-group-id: analyzer.actions.group
+    similarity-group-id: analyzer.similarity.group
 
   topics:
-    users: stats.user-actions.v1
-    events: stats.events-similarity.v1
+    user-actions: stats.user-actions.v1
+    events-similarity: stats.events-similarity.v1
 
   user-consumer:
     client-id: user-consumer
@@ -48,6 +56,10 @@ kafka:
     client-id: event-consumer
     group-id: analyzer.group
     poll-duration-ms: 5000
+
+topics:
+  user-actions: ${kafka.topics.user-actions}
+  events-similarity: ${kafka.topics.events-similarity}
 
 action-weights:
   view: 0.4

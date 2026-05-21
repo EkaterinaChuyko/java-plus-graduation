@@ -1,12 +1,10 @@
 package ru.practicum.model;
 
+import com.netflix.appinfo.InstanceInfo;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-import ru.practicum.stats.avro.ActionTypeAvro;
+import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,7 +13,10 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserAction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,9 +27,16 @@ public class UserAction {
     @Column(name = "event_id")
     private Long eventId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "action")
-    private ActionTypeAvro action;
+    private InstanceInfo.ActionType action;
+
+    @Column(name = "rating")
+    private Double rating;
 
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
+
+    @Column(name = "created")
+    private Instant created;
 }

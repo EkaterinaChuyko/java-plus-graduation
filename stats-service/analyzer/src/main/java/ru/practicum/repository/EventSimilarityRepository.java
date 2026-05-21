@@ -1,22 +1,23 @@
 package ru.practicum.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.model.EventSimilarity;
-import ru.practicum.model.EventSimilarityId;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-public interface EventSimilarityRepository extends JpaRepository<EventSimilarity, EventSimilarityId> {
-    Optional<EventSimilarity> findByEventAAndEventB(long eventA, long eventB);
+public interface EventSimilarityRepository extends JpaRepository<EventSimilarity, Long> {
+    Optional<EventSimilarity> findByEventAAndEventB(Long eventIdA, Long eventIdB);
 
-    @Query("SELECT es FROM EventSimilarity es " +
-           "WHERE es.eventA = :eventId OR es.eventB = :eventId")
-    List<EventSimilarity> findByEventAOrEventB(long eventId);
+    List<EventSimilarity> findTopByEventAInOrEventBInOrderByScoreDesc(
+            Set<Long> eventAIds,
+            Set<Long> eventBIds,
+            Pageable pageable);
 
-    @Query("SELECT es FROM EventSimilarity es " +
-           "WHERE es.eventA IN :eventIds OR es.eventB IN :eventIds")
-    List<EventSimilarity> findByEventAInOrEventBIn(Collection<Long> eventIds);
+    @Query("SELECT e FROM EventSimilarity e WHERE e.eventA = :eventId OR e.eventB = :eventId")
+    List<EventSimilarity> findByEventAOrEventB(@Param("eventId") Long eventId);
 }
