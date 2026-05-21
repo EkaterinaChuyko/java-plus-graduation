@@ -150,15 +150,22 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventShortDto> searchPublic(String text, List<Long> categories, Boolean paid,
-                                            LocalDateTime rangeStart, LocalDateTime rangeEnd,
-                                            Boolean onlyAvailable, String sort, int from, int size,
-                                            String requestUri, String ip) {
+    public List<EventShortDto> searchPublic(String text,
+                                            List<Long> categories,
+                                            Boolean paid,
+                                            LocalDateTime rangeStart,
+                                            LocalDateTime rangeEnd,
+                                            Boolean onlyAvailable,
+                                            String sort,
+                                            int from,
+                                            int size,
+                                            String requestUri,
+                                            String ip) {
 
         safeAddHit(requestUri, ip);
 
-        if (rangeStart != null && rangeEnd != null &&
-            rangeStart.isAfter(rangeEnd)) {
+        if (rangeStart != null && rangeEnd != null
+            && rangeStart.isAfter(rangeEnd)) {
             throw new ConditionsException("rangeStart must be before rangeEnd");
         }
 
@@ -168,19 +175,34 @@ public class EventServiceImpl implements EventService {
                 .filter(id -> id != null && id > 0)
                 .toList();
 
+        String validText = (text == null || text.isBlank() || text.equals("0"))
+                ? null
+                : text;
+
         Specification<Event> spec = Specification.where(published())
                 .and(betweenDates(rangeStart, rangeEnd))
                 .and(validCategories == null || validCategories.isEmpty()
                         ? null
                         : inCategories(validCategories))
-                .and(paid == null ? null : paidEq(paid))
-                .and(text == null || text.isBlank()
+                .and(paid == null
                         ? null
-                        : textLike(text));
+                        : paidEq(paid))
+                .and(validText == null
+                        ? null
+                        : textLike(validText));
 
-        Pageable pageable = PageRequest.of(from / size, size, Sort.by("eventDate"));
+        if (Boolean.TRUE.equals(onlyAvailable)) {
+            spec = spec.and(availableEvents());
+        }
 
-        return eventRepository.findAll(spec, pageable).stream()
+        Sort sorting = "VIEWS".equalsIgnoreCase(sort)
+                ? Sort.by(Sort.Direction.DESC, "views")
+                : Sort.by(Sort.Direction.DESC, "eventDate");
+
+        Pageable pageable = PageRequest.of(from / size, size, sorting);
+
+        return eventRepository.findAll(spec, pageable)
+                .stream()
                 .map(this::enrichShortDto)
                 .collect(Collectors.toList());
     }
@@ -217,33 +239,40 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto updateByAdmin(Long eventId, UpdateEventAdminRequest dto) {
-        Event e = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
 
-        if (dto.getEventDate() != null && dto.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
+        Event e = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found"));
+
+        if (dto.getEventDate() != null &&
+            dto.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new ConflictException("Date too early");
         }
 
-        if (dto.getStateAction() != null) {
+        UpdateEventAdminRequest.StateAction action = dto.getStateAction();
 
-            if (dto.getStateAction() == UpdateEventAdminRequest.StateAction.PUBLISH_EVENT) {
+        if (action != null) {
 
-                if (e.getState() != EventState.PENDING) {
-                    throw new ConflictException("Cannot publish not pending");
+            switch (action) {
+
+                case PUBLISH_EVENT -> {
+                    if (e.getState() != EventState.PENDING) {
+                        throw new ConflictException("Cannot publish not pending");
+                    }
+                    e.setState(EventState.PUBLISHED);
+                    e.setPublishedOn(LocalDateTime.now());
                 }
 
-                e.setState(EventState.PUBLISHED);
-                e.setPublishedOn(LocalDateTime.now());
-
-            } else if (dto.getStateAction() == UpdateEventAdminRequest.StateAction.REJECT_EVENT) {
-
-                if (e.getState() == EventState.PUBLISHED) {
-                    throw new ConflictException("Cannot reject published");
+                case REJECT_EVENT -> {
+                    if (e.getState() == EventState.PUBLISHED) {
+                        throw new ConflictException("Cannot reject published");
+                    }
+                    e.setState(EventState.CANCELED);
                 }
-
-                e.setState(EventState.CANCELED);
             }
         }
+
         EventMapper.applyAdminUpdate(e, dto);
+
         return enrichFullDto(eventRepository.save(e));
     }
 
@@ -399,5 +428,16 @@ public class EventServiceImpl implements EventService {
     private Specification<Event> stateIn(List<String> states) {
         return (r, q, cb) -> r.get("state").in(
                 states.stream().map(EventState::valueOf).collect(Collectors.toList()));
+    }
+
+    private Specification<Event> availableEvents() {
+        return (root, query, cb) ->
+                cb.or(
+                        cb.equal(root.get("participantLimit"), 0),
+                        cb.greaterThan(
+                                root.get("participantLimit"),
+                                root.get("confirmedRequests")
+                        )
+                );
     }
 }
