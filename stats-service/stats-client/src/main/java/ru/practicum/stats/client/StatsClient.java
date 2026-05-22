@@ -31,49 +31,68 @@ public class StatsClient {
     private final DiscoveryClient discoveryClient;
     private final RetryTemplate retryTemplate;
 
-    // 🔥 FIX: Eureka использует UPPERCASE имя сервиса
-    private final String statsServiceId = "STATS-SERVER";
+    private final String statsServiceId = "stats-server";
 
-    public StatsClient(DiscoveryClient discoveryClient, RestTemplate restTemplate) {
+    public StatsClient(DiscoveryClient discoveryClient,
+                       RestTemplate restTemplate) {
+
         this.discoveryClient = discoveryClient;
         this.restTemplate = restTemplate;
 
         this.retryTemplate = new RetryTemplate();
 
         FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(3000L);
+        backOffPolicy.setBackOffPeriod(100L);
         retryTemplate.setBackOffPolicy(backOffPolicy);
 
         MaxAttemptsRetryPolicy retryPolicy = new MaxAttemptsRetryPolicy();
-        retryPolicy.setMaxAttempts(3);
+        retryPolicy.setMaxAttempts(2);
         retryTemplate.setRetryPolicy(retryPolicy);
     }
 
     private String resolveBaseUrl() {
+
         return retryTemplate.execute(context -> {
+
             List<ServiceInstance> instances =
                     discoveryClient.getInstances(statsServiceId);
 
             if (instances == null || instances.isEmpty()) {
+
                 log.warn("No instances in Eureka for {}", statsServiceId);
-                throw new IllegalStateException("Stats service unavailable: " + statsServiceId);
+
+                throw new IllegalStateException(
+                        "Stats service unavailable: " + statsServiceId
+                );
             }
 
             ServiceInstance instance = instances.get(0);
-            return "http://" + instance.getHost() + ":" + instance.getPort();
+
+            String baseUrl =
+                    "http://" + instance.getHost() + ":" + instance.getPort();
+
+            log.debug("Resolved stats-server URL: {}", baseUrl);
+
+            return baseUrl;
         });
     }
 
     public void hit(HitDto hitDto) {
+
         try {
+
             String baseUrl = resolveBaseUrl();
 
-            log.info("Sending hit to stats-server: {}", hitDto);
+            log.debug("Sending hit to stats-server: {}", hitDto);
 
-            restTemplate.postForEntity(baseUrl + "/hit", hitDto, Void.class);
+            restTemplate.postForEntity(
+                    baseUrl + "/hit",
+                    hitDto,
+                    Void.class
+            );
 
         } catch (Exception e) {
-            log.warn("Could not save stats hit: {}", e.getMessage());
+            log.error("Could not save stats hit", e);
         }
     }
 
@@ -81,16 +100,25 @@ public class StatsClient {
                                        LocalDateTime end,
                                        List<String> uris,
                                        boolean unique) {
+
         try {
+
             String baseUrl = resolveBaseUrl();
 
             UriComponentsBuilder builder = UriComponentsBuilder
                     .fromHttpUrl(baseUrl + "/stats")
-                    .queryParam("start", start.format(DATE_TIME_FORMATTER))
-                    .queryParam("end", end.format(DATE_TIME_FORMATTER))
+                    .queryParam(
+                            "start",
+                            start.format(DATE_TIME_FORMATTER)
+                    )
+                    .queryParam(
+                            "end",
+                            end.format(DATE_TIME_FORMATTER)
+                    )
                     .queryParam("unique", unique);
 
             if (uris != null && !uris.isEmpty()) {
+
                 for (String uri : uris) {
                     builder.queryParam("uris", uri);
                 }
@@ -98,17 +126,21 @@ public class StatsClient {
 
             String url = builder.toUriString();
 
-            log.info("STATS REQUEST URL: {}", url);
+            log.debug("STATS REQUEST URL: {}", url);
 
             ViewStatsDto[] response =
-                    restTemplate.getForObject(url, ViewStatsDto[].class);
+                    restTemplate.getForObject(
+                            url,
+                            ViewStatsDto[].class
+                    );
 
             return response == null
                     ? Collections.emptyList()
                     : Arrays.asList(response);
 
         } catch (Exception e) {
-            log.warn("Failed to fetch stats: {}", e.getMessage());
+            log.error("Failed to fetch stats", e);
+
             return Collections.emptyList();
         }
     }
