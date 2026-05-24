@@ -41,8 +41,8 @@ public class ErrorHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleTypeMismatch(Exception ex) {
-        return Map.of("error", ex.getMessage());
+    public ErrorResponse handleTypeMismatch(Exception ex) {
+        return new ErrorResponse(ex.getMessage());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

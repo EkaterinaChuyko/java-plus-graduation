@@ -10,6 +10,7 @@ import ru.practicum.model.EventSimilarity;
 import ru.practicum.repository.EventSimilarityRepository;
 import ru.practicum.stats.avro.EventSimilarityAvro;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -21,49 +22,32 @@ public class SimilarityService {
     private final EventSimilarityRepository repository;
 
     @Transactional
-    public void saveOrUpdate(EventSimilarityAvro value) {
-        log.debug("Processing event similarity: {} and {}, score={}",
-                value.getEventA(), value.getEventB(), value.getScore()
-        );
+    public void saveOrUpdateBatch(List<EventSimilarityAvro> batch) {
 
-        EventSimilarity similarity = EventSimilarity.builder()
-                .eventA(value.getEventA())
-                .eventB(value.getEventB())
-                .score(value.getScore())
-                .created(value.getTimestamp())
-                .build();
+        log.info("Processing similarity batch, size={}", batch.size());
 
-        repository.findByEventAAndEventB(similarity.getEventA(), similarity.getEventB())
-                .ifPresent(oldEventSimilarity -> {
-                    similarity.setId(oldEventSimilarity.getId());
-                    log.debug("Existing similarity found, updating id={}",
-                            oldEventSimilarity.getId()
-                    );
-                });
+        List<EventSimilarity> similarities = new ArrayList<>();
 
-        repository.save(similarity);
+        for (EventSimilarityAvro value : batch) {
+            log.debug("Processing event similarity: {} and {}, score={}", value.getEventA(), value.getEventB(), value.getScore());
+            EventSimilarity similarity = EventSimilarity.builder().eventA(value.getEventA()).eventB(value.getEventB()).score(value.getScore()).created(value.getTimestamp()).build();
 
-        log.info("Saved similarity between events {} and {}, score={}",
-                similarity.getEventA(), similarity.getEventB(), similarity.getScore()
-        );
+            repository.findByEventAAndEventB(similarity.getEventA(), similarity.getEventB()).ifPresent(existing -> {
+                similarity.setId(existing.getId());
+                log.debug("Existing similarity found, updating id={}", existing.getId());
+            });
+            similarities.add(similarity);
+        }
+        repository.saveAll(similarities);
+
+        log.info("Saved {} similarity records", similarities.size());
     }
 
     @Transactional(readOnly = true)
-    public List<EventSimilarity> findContainsEventsScore(
-            Set<Long> eventIds,
-            int maxResults
-    ) {
+    public List<EventSimilarity> findContainsEventsScore(Set<Long> eventIds, int maxResults) {
         Pageable pageable = PageRequest.of(0, maxResults);
-
-        log.info("Searching top {} event similarity pairs by score (eventIds size={})",
-                maxResults, eventIds.size()
-        );
-
-        List<EventSimilarity> result =
-                repository.findTopByEventAInOrEventBInOrderByScoreDesc(
-                        eventIds, eventIds, pageable
-                );
-
+        log.info("Searching top {} event similarity pairs by score (eventIds size={})", maxResults, eventIds.size());
+        List<EventSimilarity> result = repository.findTopByEventAInOrEventBInOrderByScoreDesc(eventIds, eventIds, pageable);
         log.info("Found {} similarity pairs", result.size());
 
         return result;
@@ -71,14 +55,9 @@ public class SimilarityService {
 
     @Transactional(readOnly = true)
     public List<EventSimilarity> findAllContainsEvent(long eventId) {
-
         log.info("Searching similarities for event {}", eventId);
-
-        List<EventSimilarity> result =
-                repository.findByEventAOrEventB(eventId);
-
+        List<EventSimilarity> result = repository.findByEventAOrEventB(eventId);
         log.info("Found {} similarities for event {}", result.size(), eventId);
-
         return result;
     }
 }
