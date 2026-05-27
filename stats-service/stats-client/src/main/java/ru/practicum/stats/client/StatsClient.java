@@ -1,6 +1,7 @@
 package ru.practicum.stats.client;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
@@ -29,67 +30,118 @@ public class StatsClient {
     private final RestTemplate restTemplate;
     private final DiscoveryClient discoveryClient;
     private final RetryTemplate retryTemplate;
-    private final String statsServiceId;
 
-    public StatsClient(DiscoveryClient discoveryClient, RestTemplate restTemplate) {
+    private final String statsServiceId = "stats-server";
+
+    public StatsClient(DiscoveryClient discoveryClient,
+                       RestTemplate restTemplate) {
+
         this.discoveryClient = discoveryClient;
         this.restTemplate = restTemplate;
-        this.statsServiceId = "stats-server";
 
         this.retryTemplate = new RetryTemplate();
 
-        FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
-        fixedBackOffPolicy.setBackOffPeriod(3000L);
-        retryTemplate.setBackOffPolicy(fixedBackOffPolicy);
+        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+        backOffPolicy.setBackOffPeriod(100L);
+        retryTemplate.setBackOffPolicy(backOffPolicy);
 
         MaxAttemptsRetryPolicy retryPolicy = new MaxAttemptsRetryPolicy();
-        retryPolicy.setMaxAttempts(3);
+        retryPolicy.setMaxAttempts(2);
         retryTemplate.setRetryPolicy(retryPolicy);
     }
 
-    private ServiceInstance getInstance() {
-        List<ServiceInstance> instances = discoveryClient.getInstances(statsServiceId);
-        if (instances == null || instances.isEmpty()) {
-            throw new RuntimeException("Сервис статистики недоступен: " + statsServiceId);
-        }
-        return instances.get(0);
-    }
+    private String resolveBaseUrl() {
 
-    private String getBaseUrl() {
-        ServiceInstance instance = retryTemplate.execute(context -> getInstance());
-        String url = "http://" + instance.getHost() + ":" + instance.getPort();
-        log.info("Resolved stats-server URL: {}", url);
-        return url;
+        return retryTemplate.execute(context -> {
+
+            List<ServiceInstance> instances =
+                    discoveryClient.getInstances(statsServiceId);
+
+            if (instances == null || instances.isEmpty()) {
+
+                log.warn("No instances in Eureka for {}", statsServiceId);
+
+                throw new IllegalStateException(
+                        "Stats service unavailable: " + statsServiceId
+                );
+            }
+
+            ServiceInstance instance = instances.get(0);
+
+            String baseUrl =
+                    "http://" + instance.getHost() + ":" + instance.getPort();
+
+            log.debug("Resolved stats-server URL: {}", baseUrl);
+
+            return baseUrl;
+        });
     }
 
     public void hit(HitDto hitDto) {
-        String baseUrl = getBaseUrl();
-        log.info("Sending hit to stats-server at {}: {}", baseUrl, hitDto);
+
         try {
-            restTemplate.postForEntity(baseUrl + "/hit", hitDto, Void.class);
-            log.info("Hit sent successfully");
+
+            String baseUrl = resolveBaseUrl();
+
+            log.debug("Sending hit to stats-server: {}", hitDto);
+
+            restTemplate.postForEntity(
+                    baseUrl + "/hit",
+                    hitDto,
+                    Void.class
+            );
+
         } catch (Exception e) {
-            log.error("Failed to send hit to stats-server: {}", e.getMessage(), e);
-            throw e;
+            log.error("Could not save stats hit", e);
         }
     }
 
-    public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end,
-                                       List<String> uris, boolean unique) {
-        String baseUrl = getBaseUrl();
+    public List<ViewStatsDto> getStats(LocalDateTime start,
+                                       LocalDateTime end,
+                                       List<String> uris,
+                                       boolean unique) {
 
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl + "/stats")
-                .queryParam("start", start.format(DATE_TIME_FORMATTER))
-                .queryParam("end", end.format(DATE_TIME_FORMATTER))
-                .queryParam("unique", unique);
+        try {
 
-        if (uris != null && !uris.isEmpty()) {
-            uris.forEach(builder::queryParam);
+            String baseUrl = resolveBaseUrl();
+
+            UriComponentsBuilder builder = UriComponentsBuilder
+                    .fromHttpUrl(baseUrl + "/stats")
+                    .queryParam(
+                            "start",
+                            start.format(DATE_TIME_FORMATTER)
+                    )
+                    .queryParam(
+                            "end",
+                            end.format(DATE_TIME_FORMATTER)
+                    )
+                    .queryParam("unique", unique);
+
+            if (uris != null && !uris.isEmpty()) {
+
+                for (String uri : uris) {
+                    builder.queryParam("uris", uri);
+                }
+            }
+
+            String url = builder.toUriString();
+
+            log.debug("STATS REQUEST URL: {}", url);
+
+            ViewStatsDto[] response =
+                    restTemplate.getForObject(
+                            url,
+                            ViewStatsDto[].class
+                    );
+
+            return response == null
+                    ? Collections.emptyList()
+                    : Arrays.asList(response);
+
+        } catch (Exception e) {
+            log.error("Failed to fetch stats", e);
+
+            return Collections.emptyList();
         }
-
-        String url = builder.toUriString();
-
-        ViewStatsDto[] response = restTemplate.getForObject(url, ViewStatsDto[].class);
-        return response == null ? Collections.emptyList() : Arrays.asList(response);
     }
 }

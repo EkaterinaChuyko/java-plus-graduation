@@ -1,0 +1,67 @@
+server:
+  port: 0
+
+grpc:
+  server:
+    port: 0
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5433/ewm-stats
+    username: stat
+    password: stat
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+
+  sql:
+    init:
+      mode: always
+
+logging:
+  level:
+    root: INFO
+    ru.practicum.stats.analyzer: DEBUG
+
+kafka:
+  bootstrap-servers: localhost:9092
+
+  consumer:
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    user-actions-deserializer: serialization.UserActionDeserializer
+    events-similarity-deserializer: serialization.EventSimilarityDeserializer
+
+    actions-group-id: analyzer.actions.group
+    similarity-group-id: analyzer.similarity.group
+
+  topics:
+    user-actions: stats.user-actions.v1
+    events-similarity: stats.events-similarity.v1
+
+  user-consumer:
+    client-id: user-consumer
+    group-id: analyzer.group
+    poll-duration-ms: 5000
+
+  event-consumer:
+    client-id: event-consumer
+    group-id: analyzer.group
+    poll-duration-ms: 5000
+
+topics:
+  user-actions: ${kafka.topics.user-actions}
+  events-similarity: ${kafka.topics.events-similarity}
+
+action-weights:
+  view: 0.4
+  register: 0.8
+  like: 1.0

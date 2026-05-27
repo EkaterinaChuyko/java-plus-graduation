@@ -2,7 +2,6 @@ package ru.practicum.service.event;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -13,9 +12,7 @@ import ru.practicum.client.RatingClient;
 import ru.practicum.client.RequestClient;
 import ru.practicum.client.UserClient;
 import ru.practicum.dto.category.CategoryDto;
-import ru.practicum.dto.enums.AdminStateAction;
 import ru.practicum.dto.enums.EventState;
-import ru.practicum.dto.enums.UserStateAction;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.dto.event.NewEventDto;
@@ -24,6 +21,7 @@ import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.dto.stats.HitDto;
 import ru.practicum.dto.stats.ViewStatsDto;
 import ru.practicum.dto.user.UserShortDto;
+import ru.practicum.exception.ConditionsException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.EventMapper;
@@ -38,8 +36,6 @@ import ru.practicum.request.UpdateEventUserRequest;
 import ru.practicum.stats.client.StatsClient;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -154,27 +150,59 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventShortDto> searchPublic(String text, List<Long> categories, Boolean paid,
-                                            LocalDateTime rangeStart, LocalDateTime rangeEnd,
-                                            Boolean onlyAvailable, String sort, int from, int size,
-                                            String requestUri, String ip) {
+    public List<EventShortDto> searchPublic(String text,
+                                            List<Long> categories,
+                                            Boolean paid,
+                                            LocalDateTime rangeStart,
+                                            LocalDateTime rangeEnd,
+                                            Boolean onlyAvailable,
+                                            String sort,
+                                            int from,
+                                            int size,
+                                            String requestUri,
+                                            String ip) {
 
         safeAddHit(requestUri, ip);
 
-        if (rangeStart != null && rangeEnd != null &&
-            rangeStart.isAfter(rangeEnd)) {
-            throw new IllegalArgumentException("End before start");
+        if (rangeStart != null && rangeEnd != null
+            && rangeStart.isAfter(rangeEnd)) {
+            throw new ConditionsException("rangeStart must be before rangeEnd");
         }
+
+        List<Long> validCategories = categories == null
+                ? null
+                : categories.stream()
+                .filter(id -> id != null && id > 0)
+                .toList();
+
+        String validText = (text == null || text.isBlank() || text.equals("0"))
+                ? null
+                : text;
 
         Specification<Event> spec = Specification.where(published())
                 .and(betweenDates(rangeStart, rangeEnd))
-                .and(categories == null || categories.isEmpty() ? null : inCategories(categories))
-                .and(paid == null ? null : paidEq(paid))
-                .and(text == null || text.isBlank() ? null : textLike(text));
+                .and(validCategories == null || validCategories.isEmpty()
+                        ? null
+                        : inCategories(validCategories))
+                .and(paid == null
+                        ? null
+                        : paidEq(paid))
+                .and(validText == null
+                        ? null
+                        : textLike(validText));
 
-        Pageable pageable = PageRequest.of(from / size, size, Sort.by("eventDate"));
+        if (Boolean.TRUE.equals(onlyAvailable)) {
+            spec = spec.and(availableEvents());
+        }
 
-        return eventRepository.findAll(spec, pageable).stream()
+        Sort sorting = "VIEWS".equalsIgnoreCase(sort)
+                ? Sort.by(Sort.Direction.DESC, "views")
+                : Sort.by(Sort.Direction.DESC, "eventDate");
+
+        Pageable pageable = PageRequest.of(from / size, size, sorting);
+
+        return eventRepository.findAll(spec, pageable)
+                .stream()
                 .map(this::enrichShortDto)
                 .collect(Collectors.toList());
     }
@@ -211,33 +239,40 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto updateByAdmin(Long eventId, UpdateEventAdminRequest dto) {
-        Event e = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
 
-        if (dto.getEventDate() != null && dto.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
+        Event e = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found"));
+
+        if (dto.getEventDate() != null &&
+            dto.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new ConflictException("Date too early");
         }
 
-        if (dto.getStateAction() != null) {
+        UpdateEventAdminRequest.StateAction action = dto.getStateAction();
 
-            if (dto.getStateAction() == UpdateEventAdminRequest.StateAction.PUBLISH_EVENT) {
+        if (action != null) {
 
-                if (e.getState() != EventState.PENDING) {
-                    throw new ConflictException("Cannot publish not pending");
+            switch (action) {
+
+                case PUBLISH_EVENT -> {
+                    if (e.getState() != EventState.PENDING) {
+                        throw new ConflictException("Cannot publish not pending");
+                    }
+                    e.setState(EventState.PUBLISHED);
+                    e.setPublishedOn(LocalDateTime.now());
                 }
 
-                e.setState(EventState.PUBLISHED);
-                e.setPublishedOn(LocalDateTime.now());
-
-            } else if (dto.getStateAction() == UpdateEventAdminRequest.StateAction.REJECT_EVENT) {
-
-                if (e.getState() == EventState.PUBLISHED) {
-                    throw new ConflictException("Cannot reject published");
+                case REJECT_EVENT -> {
+                    if (e.getState() == EventState.PUBLISHED) {
+                        throw new ConflictException("Cannot reject published");
+                    }
+                    e.setState(EventState.CANCELED);
                 }
-
-                e.setState(EventState.CANCELED);
             }
         }
+
         EventMapper.applyAdminUpdate(e, dto);
+
         return enrichFullDto(eventRepository.save(e));
     }
 
@@ -393,5 +428,16 @@ public class EventServiceImpl implements EventService {
     private Specification<Event> stateIn(List<String> states) {
         return (r, q, cb) -> r.get("state").in(
                 states.stream().map(EventState::valueOf).collect(Collectors.toList()));
+    }
+
+    private Specification<Event> availableEvents() {
+        return (root, query, cb) ->
+                cb.or(
+                        cb.equal(root.get("participantLimit"), 0),
+                        cb.greaterThan(
+                                root.get("participantLimit"),
+                                root.get("confirmedRequests")
+                        )
+                );
     }
 }

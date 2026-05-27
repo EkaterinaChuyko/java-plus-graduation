@@ -1,0 +1,46 @@
+package ru.practicum.controller;
+
+import com.google.protobuf.Empty;
+import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.devh.boot.grpc.server.service.GrpcService;
+import ru.practicum.stats.grpc.user.UserActionControllerGrpc;
+import ru.practicum.stats.proto.user.UserActionProto;
+import ru.practicum.user.UserActionHandler;
+
+
+@Slf4j
+@GrpcService
+@RequiredArgsConstructor
+public class UserActionRpcController
+        extends UserActionControllerGrpc.UserActionControllerImplBase {
+
+    private final UserActionHandler userActionHandler;
+
+    @Override
+    public void collectUserAction(UserActionProto request,
+                                  StreamObserver<Empty> responseObserver) {
+
+        log.info("Received gRPC request: {}", request);
+
+        try {
+            userActionHandler.handle(request);
+
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+
+            log.error("Failed to process user action", e);
+
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription(e.getMessage())
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        }
+    }
+}

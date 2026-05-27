@@ -1,0 +1,46 @@
+server:
+  port: 0
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    properties:
+      schema.registry.url: http://localhost:8081
+
+    consumer:
+      group-id: aggregator.group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+      key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value-deserializer: serialization.UserActionDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.LongSerializer
+      value-serializer: serialization.GeneralAvroSerializer
+
+logging:
+  level:
+    root: INFO
+    ru.practicum.stats.aggregator: DEBUG
+
+app:
+  kafka:
+    topics:
+      user-actions: stats.user-actions.v1
+      events-similarity: stats.events-similarity.v1
+
+topics:
+  user-actions: ${app.kafka.topics.user-actions}
+  events-similarity: ${app.kafka.topics.events-similarity}
+
+action-weights:
+  view: 0.4
+  register: 0.8
+  like: 1.0
